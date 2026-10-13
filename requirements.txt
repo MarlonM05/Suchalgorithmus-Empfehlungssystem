@@ -1,0 +1,12 @@
+# Runtime and development dependencies (Python 3.11+).
+# Install everything with: pip install -r requirements.txt
+numpy>=2.0
+numba>=0.60
+pandas>=2.2
+scikit-learn>=1.5
+matplotlib>=3.9
+streamlit>=1.40
+pytest>=8.0
+
+# The project itself as an editable package (makes `import recommender` work everywhere)
+-e .

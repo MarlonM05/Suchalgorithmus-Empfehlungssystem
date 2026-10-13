@@ -1,0 +1,16 @@
+[build-system]
+requires = ["setuptools>=69"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "recommender"
+version = "0.1.0"
+description = "Recommendation system for search algorithms (DHBW Ravensburg, Theoretische Informatik)"
+requires-python = ">=3.11"
+dependencies = ["numpy>=2.0", "numba>=0.60"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
