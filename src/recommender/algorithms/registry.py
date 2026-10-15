@@ -3,6 +3,9 @@
 The registry is the single place where the rest of the project (benchmark,
 recommender, executor, user interface) looks up the algorithms, their
 preconditions and their sources.
+
+``ALGORITHMS`` contains the algorithms for arrays, ``LIST_ALGORITHMS`` those
+for linked lists (sequential access only).
 """
 
 from dataclasses import dataclass, field
@@ -23,6 +26,12 @@ from .hashing import build_hash_table, hash_lookup, hash_lookup_counted
 from .interpolation import interpolation_search, interpolation_search_counted
 from .jump import jump_search, jump_search_counted
 from .linear import linear_search, linear_search_counted
+from .linked_list import (
+    list_jump_search,
+    list_jump_search_counted,
+    list_linear_search,
+    list_linear_search_counted,
+)
 
 
 @dataclass(frozen=True)
@@ -43,9 +52,11 @@ def as_search_array(values: Any) -> np.ndarray:
 class SearchAlgorithm:
     """A search algorithm together with everything needed to run and explain it.
 
-    ``prepare`` turns an int64 array into the data structure the search
-    function works on (the array itself, or a hash table). It does not sort:
-    sorting is a separate preprocessing step decided by the recommender.
+    ``prepare`` turns the stored data (an int64 array, or a ``LinkedList``
+    for ``structure == "linked_list"``) into what the search function works
+    on: the array itself, a hash table or the list's node-pool tuple. It does
+    not sort: sorting is a separate preprocessing step decided by the
+    recommender.
     """
 
     key: str
@@ -55,7 +66,8 @@ class SearchAlgorithm:
     requires_sorted: bool
     complexity: str
     sources: tuple[str, ...]
-    prepare: Callable[[np.ndarray], Any] = field(default=as_search_array)
+    prepare: Callable[[Any], Any] = field(default=as_search_array)
+    structure: str = "array"
 
     def find(self, data: Any, key: int) -> int:
         """Run the search on prepared ``data`` and return the index or -1."""
@@ -70,6 +82,10 @@ class SearchAlgorithm:
 
 def _prepare_hash_table(values: np.ndarray):
     return build_hash_table(as_search_array(values))
+
+
+def _prepare_linked_list(linked_list):
+    return linked_list.as_tuple()
 
 
 ALGORITHMS: dict[str, SearchAlgorithm] = {
@@ -147,6 +163,35 @@ ALGORITHMS: dict[str, SearchAlgorithm] = {
             complexity="O(1) erwartet, Aufbau O(n)",
             sources=("richter2015",),
             prepare=_prepare_hash_table,
+        ),
+    ]
+}
+
+
+LIST_ALGORITHMS: dict[str, SearchAlgorithm] = {
+    algorithm.key: algorithm
+    for algorithm in [
+        SearchAlgorithm(
+            key="list_linear",
+            name_de="Lineare Suche (verkettete Liste)",
+            search=list_linear_search,
+            search_counted=list_linear_search_counted,
+            requires_sorted=False,
+            complexity="O(n)",
+            sources=("vansandt2019",),
+            prepare=_prepare_linked_list,
+            structure="linked_list",
+        ),
+        SearchAlgorithm(
+            key="list_jump",
+            name_de="Sprungsuche (verkettete Liste)",
+            search=list_jump_search,
+            search_counted=list_jump_search_counted,
+            requires_sorted=True,
+            complexity="O(√n) Vergleiche, O(n) Knotenbesuche",
+            sources=("shneiderman1978",),
+            prepare=_prepare_linked_list,
+            structure="linked_list",
         ),
     ]
 }
