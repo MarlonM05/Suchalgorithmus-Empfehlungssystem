@@ -166,3 +166,57 @@ ca. 33 µs, weil die CPU Sprungvorhersage und Cache auf die wiederholten
 Zugriffe einstellt. Realistisch sind die Kosten mit wechselnden Stichproben.
 Die Messumgebung (M3) variiert deshalb Seeds und Eingaben zwischen den
 Wiederholungen [mytkowicz2009].
+
+## M3 – Messumgebung und Experimente
+
+### A18: Messplattform
+Alle Messungen laufen auf einem einzigen Rechner (Laptop, Apple M5, macOS),
+die Umgebung steht in jeder Ergebnisdatei. macOS erlaubt es weder, Threads
+fest an Leistungskerne zu binden, noch die dynamische Taktanpassung
+abzuschalten. Absolute Laufzeiten gelten daher nur für diese Plattform. Die
+gezählten Operationen (Vergleiche, Zugriffe) ergänzen sie als
+hardwareunabhängiges Maß. Empfehlung für die vollständige Messreihe: Netzteil
+angeschlossen, andere Programme geschlossen, Rechner während der Messung nicht
+benutzen.
+
+### A19: Blockmessung
+Ein gemessener Block dauert mindestens 1 ms (etwa 25 000-fache
+Timer-Auflösung) [chen2016]. Die Blocklänge wird durch Verdoppeln kalibriert
+(höchstens 100 000 Anfragen). Ist schon eine einzelne Anfrage länger als 1 ms
+(z. B. lineare Suche bei n = 10⁷), besteht der Block aus einer Anfrage. Die
+Zeit pro Anfrage enthält den Schleifen-Overhead des Blocks (≈ 1 ns). Er ist
+für alle Verfahren gleich.
+
+### A20: Wiederholungen
+Vollständige Messreihe: 30 gemessene Wiederholungen nach Kompilierung und 2
+verworfenen Aufwärmläufen [kalibera2013], [georges2007]. Jede Wiederholung
+zieht einen neuen zufälligen Block aus einem Pool von 10 000 Anfragen (A17).
+Schnelltest: 5 Wiederholungen, nur zur Funktionsprüfung, nicht für die Arbeit.
+
+### A21: Einzelmessung von Vorverarbeitung und Analyse
+Sortieren, Hashtabellen-Aufbau, Merkmalsanalyse und Sortierprüfung werden pro
+Aufruf gemessen, nicht in Blöcken. Ihre Zeiten enthalten deshalb den
+Aufruf-Overhead von Python in den kompilierten Code (einige hundert ns). Das
+entspricht den Kosten, die das Tool tatsächlich hat, überwiegt aber bei sehr
+kleinem n.
+
+### A22: Amortisationsrechnung
+Die Gesamtkosten T(q) = Vorverarbeitung + q · Kosten pro Anfrage werden aus
+getrennt gemessenen Komponenten berechnet (lineares Kostenmodell), nicht als
+Gesamtlauf gemessen. Wechselwirkungen (z. B. Cache-Zustand nach dem Sortieren)
+sind nicht berücksichtigt. Die Break-even-Punkte werden aus den Medianen
+berechnet und haben kein eigenes Konfidenzintervall. Sortiert wird mit dem
+Numba-kompilierten `np.sort`, gesucht mit der klassischen binären Suche.
+
+### A23: Versuchsplan „ein Faktor zur Zeit“
+Jedes Experiment variiert ein Merkmal und hält die anderen auf einer Basis
+fest: gleichverteilt, sortiert, keine Duplikate, nur Treffer mit
+gleichverteilter Position, Array, n = 10⁶ (Schnelltest 10⁵). Wechselwirkungen
+zwischen Merkmalen (z. B. lognormal *und* viele Duplikate) zeigen diese
+Experimente nicht. Sie werden erst durch das Messraster für das
+Empfehlungssystem (M4) abgedeckt.
+
+### A24: Zusammenfassung der Speedups
+Das geometrische Mittel der Speedups gegenüber der binären Suche
+[fleming1986] gewichtet jede gemessene Datengröße gleich. Die Wahl der
+Größenstufen beeinflusst damit das Mittel.

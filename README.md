@@ -4,7 +4,7 @@ Hochschulprojekt (DHBW Ravensburg, Modul Theoretische Informatik): ein Tool,
 das anhand der Eigenschaften einer Datenmenge ein passendes Suchverfahren
 empfiehlt, es automatisch ausführt und den Entscheidungsweg grafisch darstellt.
 
-> Stand: Meilenstein M2 (Suchverfahren, Datengeneratoren, Merkmalsextraktion). Die vollständige README folgt in M6.
+> Stand: Meilenstein M3 (Suchverfahren, Daten, Merkmale, Messumgebung und Experimente). Die vollständige README folgt in M6.
 
 ## Installation
 
@@ -50,3 +50,28 @@ einer Mess- und einer Zählvariante vor (siehe
   Suchanfragen (`QueryConfig`: Anzahl, Trefferquote, Zielposition).
 - `recommender.features`: Merkmale per Stichprobe (`extract_features`) inklusive
   gemessener Analysekosten sowie die exakte Sortierprüfung `verify_sorted`.
+
+## Experimente
+
+Die Skripte in `experiments/` erzeugen die Messdaten (CSV mit
+Umgebungsprotokoll) und Diagramme (PDF) für die Ausarbeitung.
+
+```bash
+python experiments/run_all.py --mode quick    # Funktionsprüfung, ca. 30 Sekunden
+python experiments/run_all.py --mode full     # vollständige Messreihe für die Arbeit
+python experiments/run_all.py --plot-only     # nur Diagramme aus vorhandenen CSV neu zeichnen
+```
+
+Ergebnisse landen in `results/quick/` bzw. `results/full/`. Vor der
+vollständigen Messreihe: Netzteil anschließen, andere Programme schließen, den
+Rechner während der Messung nicht benutzen.
+
+| Skript | Merkmal | Diagramme |
+|---|---|---|
+| `exp_size.py` | Datengröße | Laufzeit und Vergleiche über n, Speedup-Tabelle |
+| `exp_distribution.py` | Verteilung | Laufzeit je Verteilung (mit KS-Wert) |
+| `exp_duplicates.py` | Duplikate | Laufzeit je Duplikatanteil |
+| `exp_access_pattern.py` | Zugriffsmuster | Laufzeit je Muster |
+| `exp_structure.py` | Speicherstruktur | Array gegenüber verketteter Liste |
+| `exp_amortization.py` | Sortierung + Anfragen | Gesamtkosten T(q), Break-even-Punkte |
+| `exp_analysis_cost.py` | Analysekosten | Kosten gegenüber Suche, Genauigkeit nach Stichprobengröße |
