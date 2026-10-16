@@ -4,3 +4,6 @@ __pycache__/
 *.egg-info/
 .pytest_cache/
 .DS_Store
+
+# Quick-mode results are only a functional check; full results are committed
+results/quick/
