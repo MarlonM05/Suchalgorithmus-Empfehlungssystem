@@ -7,3 +7,6 @@ __pycache__/
 
 # Quick-mode results are only a functional check; full results are committed
 results/quick/
+
+# Logs of measurement runs
+*.log

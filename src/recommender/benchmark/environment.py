@@ -51,7 +51,8 @@ def collect_environment() -> dict[str, str]:
     """Describe hardware, software and code version of the current run."""
     ram = _ram_bytes()
     commit = _run(["git", "rev-parse", "--short", "HEAD"])
-    dirty = _run(["git", "status", "--porcelain"])
+    # Only changes to tracked files matter; new result files are untracked.
+    dirty = _run(["git", "status", "--porcelain", "--untracked-files=no"])
     return {
         "date": dt.datetime.now().astimezone().isoformat(timespec="seconds"),
         "cpu": _cpu_name(),
