@@ -75,8 +75,9 @@ def test_summarize_and_speedups():
 
 def test_environment_contains_required_fields():
     environment = collect_environment()
-    for key in ["date", "cpu", "ram_gb", "os", "python", "numpy", "numba", "git_commit"]:
+    for key in ["date", "cpu", "ram_gb", "os", "python", "numpy", "numba", "git_commit", "power_source", "low_power_mode"]:
         assert environment[key]
+    assert environment["low_power_mode"] in {"on", "off", "unknown"}
 
 
 def test_results_round_trip(tmp_path):

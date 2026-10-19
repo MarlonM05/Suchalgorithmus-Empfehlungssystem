@@ -63,8 +63,15 @@ python experiments/run_all.py --plot-only     # nur Diagramme aus vorhandenen CS
 ```
 
 Ergebnisse landen in `results/quick/` bzw. `results/full/`. Vor der
-vollständigen Messreihe: Netzteil anschließen, andere Programme schließen, den
-Rechner während der Messung nicht benutzen.
+vollständigen Messreihe: Netzteil anschließen, **Stromsparmodus ausschalten**
+(Systemeinstellungen → Batterie → Stromsparmodus „Nie“), andere Programme
+schließen, den Rechner während der Messung nicht benutzen. Im Stromsparmodus
+laufen alle Messungen etwa doppelt so langsam. Die Experimente warnen davor,
+und jede Ergebnisdatei protokolliert Stromquelle und Stromsparmodus.
+
+```bash
+pmset -g | grep lowpowermode    # muss "lowpowermode 0" zeigen
+```
 
 | Skript | Merkmal | Diagramme |
 |---|---|---|

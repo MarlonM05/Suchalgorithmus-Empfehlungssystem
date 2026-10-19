@@ -326,7 +326,13 @@ Im Messraster (19.10.2026) sind alle Zeiten gleichmäßig etwa doppelt so hoch
 wie in der Messreihe von M3 (16.10.2026), z. B. lineare Suche bei n = 10⁶:
 ≈ 230 µs statt ≈ 113 µs. Der Faktor ist vom Anfang bis zum Ende des Laufs
 konstant, ein schleichender Effekt wie Überhitzung ist daher
-unwahrscheinlich. Vermutete Ursache: gedrosselte CPU (Akkubetrieb,
-Stromsparmodus oder Effizienzkerne). Weil alle Komponenten gleich betroffen
+unwahrscheinlich. Ursache (am 19.10.2026 nachgeprüft): Der Laptop lief im Akkubetrieb mit
+eingeschaltetem Stromsparmodus (`pmset -g`: `lowpowermode 1`). Eine
+Kontrollmessung mit den Einstellungen von M3 ergab im selben Zustand
+ebenfalls ≈ 245 ns statt 117 ns für die lineare Suche bei n = 1 000. Auch
+eine Wiederholung des Rasters im selben Zustand war gleich langsam.
+Seitdem protokolliert jede Ergebnisdatei Stromquelle und Stromsparmodus
+(`power_source`, `low_power_mode`), und jedes Experiment warnt vor dem Start,
+wenn der Rechner gedrosselt laufen könnte. Weil alle Komponenten gleich betroffen
 sind, bleiben Verhältnisse und Empfehlungen weitgehend gleich. Die absoluten
 Zeiten aus Raster und M3 sollten aber nicht direkt verglichen werden.

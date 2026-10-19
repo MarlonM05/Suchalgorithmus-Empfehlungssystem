@@ -47,6 +47,43 @@ def _ram_bytes() -> int | None:
     return None
 
 
+def power_state() -> dict[str, str]:
+    """Power source and low-power mode (macOS); both throttle the CPU noticeably.
+
+    On the measurement laptop, battery power with low-power mode enabled made
+    every measurement about twice as slow (docs/annahmen.md A35).
+    """
+    state = {"power_source": "unknown", "low_power_mode": "unknown"}
+    if platform.system() != "Darwin":
+        return state
+    battery = _run(["pmset", "-g", "batt"])
+    if battery and "'" in battery:
+        state["power_source"] = battery.split("'")[1]  # e.g. "AC Power" or "Battery Power"
+    settings = _run(["pmset", "-g"])
+    for line in (settings or "").splitlines():
+        parts = line.split()
+        if len(parts) == 2 and parts[0] == "lowpowermode":
+            state["low_power_mode"] = "on" if parts[1] == "1" else "off"
+    return state
+
+
+def throttling_warning() -> str | None:
+    """A warning text if the machine probably runs throttled, otherwise None."""
+    state = power_state()
+    problems = []
+    if state["power_source"] == "Battery Power":
+        problems.append("Akkubetrieb")
+    if state["low_power_mode"] == "on":
+        problems.append("Stromsparmodus an")
+    if not problems:
+        return None
+    return (
+        f"WARNUNG: {' und '.join(problems)}. Die CPU läuft dann gedrosselt, Messungen werden "
+        "etwa doppelt so langsam (docs/annahmen.md A35). Netzteil anschließen und den "
+        "Stromsparmodus ausschalten."
+    )
+
+
 def collect_environment() -> dict[str, str]:
     """Describe hardware, software and code version of the current run."""
     ram = _ram_bytes()
@@ -64,6 +101,7 @@ def collect_environment() -> dict[str, str]:
         "numba": numba.__version__,
         "pandas": pd.__version__,
         "git_commit": (commit or "unknown") + (" (uncommitted changes)" if dirty else ""),
+        **power_state(),
     }
 
 

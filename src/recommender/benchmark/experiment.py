@@ -16,7 +16,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from .environment import collect_environment, read_results, write_results
+from .environment import collect_environment, read_results, throttling_warning, write_results
 from .timing import TimingSettings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -35,7 +35,11 @@ def parse_args(description: str) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--mode", choices=MODES, default="quick", help="quick check or full series (default: quick)")
     parser.add_argument("--plot-only", action="store_true", help="only redraw the figures from the existing CSV")
-    return parser.parse_args()
+    args = parser.parse_args()
+    warning = throttling_warning()
+    if warning and not args.plot_only:
+        print(warning, flush=True)
+    return args
 
 
 def result_path(experiment: str, mode: str, suffix: str = ".csv") -> Path:
