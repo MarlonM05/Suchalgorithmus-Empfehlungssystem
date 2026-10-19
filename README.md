@@ -4,7 +4,7 @@ Hochschulprojekt (DHBW Ravensburg, Modul Theoretische Informatik): ein Tool,
 das anhand der Eigenschaften einer Datenmenge ein passendes Suchverfahren
 empfiehlt, es automatisch ausführt und den Entscheidungsweg grafisch darstellt.
 
-> Stand: Meilenstein M4 (Suchverfahren, Daten, Merkmale, Messumgebung, Experimente, Empfehlungssystem). Die vollständige README folgt in M6.
+> Stand: Meilenstein M5 (alles bis einschließlich Oberfläche). Die vollständige README folgt in M6.
 
 ## Installation
 
@@ -15,6 +15,21 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 ```
+
+## Oberfläche starten
+
+```bash
+streamlit run app/streamlit_app.py
+```
+
+Die App öffnet sich im Browser und führt in sechs Schritten durch das Tool:
+
+1. **Daten**: Datenmenge erzeugen oder CSV hochladen
+2. **Zugriffsmuster**: Suchschlüssel, Anzahl Anfragen, Trefferquote, Zielposition, Sortiergarantie
+3. **Analyse**: geschätzte Merkmale samt Analysekosten, vollständige Sortierprüfung
+4. **Empfehlung**: Strategie mit Begründung und Entscheidungsweg als Graph (Regelwerk oder gelernter Baum)
+5. **Ausführung**: automatische Suche mit Laufzeit und Operationen, Vergleich aller Verfahren
+6. **Lernmodus**: Suchverfahren Schritt für Schritt auf kleinen Arrays
 
 ## Tests
 

@@ -345,3 +345,37 @@ Rechner also keinen messbaren Unterschied. Alle Ergebnisse von M4 in
 unverändert. Keine Variante war mit Analysekosten besser. Weil alle Komponenten gleich betroffen
 sind, bleiben Verhältnisse und Empfehlungen weitgehend gleich. Die absoluten
 Zeiten aus Raster und M3 sollten aber nicht direkt verglichen werden.
+
+## M5 – Oberfläche
+
+### A36: Zeiten in der automatischen Ausführung
+Die App misst die Zeit pro Anfrage als Mittel aus 1 000 Wiederholungen
+**derselben** Suche. Weil sich die CPU auf wiederholte Eingaben einstellt
+(A17), ist dieser Wert eher optimistisch. Sortierprüfung und
+Vorverarbeitung werden einmal gemessen, inklusive Aufruf-Overhead. Die
+angezeigte Gesamtzeit für q Anfragen folgt dem Kostenmodell aus A22. Die
+Zahlen der App dienen der Veranschaulichung, die Ergebnisse der Arbeit
+stammen aus den Messreihen in `results/full/`.
+
+### A37: Sortieren in der App
+Für „Sortieren + binäre Suche“ sortiert die App mit einem stabilen
+`np.argsort`. Nur so lässt sich der gefundene Index auf die ursprüngliche
+Position zurückrechnen, und wegen der Stabilität bleibt das erste Vorkommen
+erhalten. In den Messreihen wurde stattdessen das Numba-kompilierte
+`np.sort` gemessen. Die Sortierzeiten der App sind deshalb nicht direkt mit
+den Messreihen vergleichbar.
+
+### A38: Grenzen der Oberfläche
+- Verkettete Listen sind auf n ≤ 10⁶ begrenzt, weil schon eine Suche auf
+  längeren Listen Sekunden dauert.
+- Hochgeladene CSV-Dateien müssen eine Spalte mit ganzen Zahlen enthalten
+  (A2). Leere Zeilen werden übersprungen.
+- Der Lernmodus arbeitet mit höchstens 64 Werten, die auf 0 bis 999
+  skaliert werden (die Form der Verteilung bleibt erhalten, Duplikate
+  können entstehen). Der Hash-Lookup ist dort nicht enthalten, weil seine
+  Hashtabelle kein geordnetes Array ist.
+- Der Entscheidungsbaum der App ist der auf der Kalibrierungshälfte
+  trainierte Baum aus `results/full/learned_tree.json`.
+- Der Entscheidungsweg wird standardmäßig kompakt gezeigt: nur der Weg und
+  an jeder Frage die nicht gewählte Abzweigung. Der vollständige Graph ist
+  zuschaltbar.
