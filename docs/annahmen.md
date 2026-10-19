@@ -333,6 +333,15 @@ ebenfalls ≈ 245 ns statt 117 ns für die lineare Suche bei n = 1 000. Auch
 eine Wiederholung des Rasters im selben Zustand war gleich langsam.
 Seitdem protokolliert jede Ergebnisdatei Stromquelle und Stromsparmodus
 (`power_source`, `low_power_mode`), und jedes Experiment warnt vor dem Start,
-wenn der Rechner gedrosselt laufen könnte. Weil alle Komponenten gleich betroffen
+wenn der Rechner gedrosselt laufen könnte.
+
+**Behoben:** Das Raster wurde am 19.10.2026 um 13:53 mit ausgeschaltetem
+Stromsparmodus neu gemessen (Akkubetrieb). Die Zeiten stimmen jetzt mit M3
+überein (lineare Suche bei n = 1 000: 116,6 ns statt 117 ns, bei n = 10⁶:
+112,7 µs statt 113,1 µs). Akkubetrieb ohne Stromsparmodus macht auf diesem
+Rechner also keinen messbaren Unterschied. Alle Ergebnisse von M4 in
+`results/full/` beruhen auf dieser Messung. Die Schwellen des Regelwerks
+(Version 2) wurden auf der Kalibrierungshälfte erneut geprüft und bleiben
+unverändert. Keine Variante war mit Analysekosten besser. Weil alle Komponenten gleich betroffen
 sind, bleiben Verhältnisse und Empfehlungen weitgehend gleich. Die absoluten
 Zeiten aus Raster und M3 sollten aber nicht direkt verglichen werden.
