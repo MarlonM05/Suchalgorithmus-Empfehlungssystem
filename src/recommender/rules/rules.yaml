@@ -21,6 +21,15 @@
 #   - Anfragen pro Element >= 0,2: ab q ≈ 0,2 · n schlägt die Hashtabelle die
 #     verzweigungsfreie binäre Suche auf sortierten Daten (n = 10^3 ... 10^7).
 #   - Liste: Kopieren in eine Hashtabelle kostet etwa 1,6 Listendurchläufe (n = 10^6) -> >= 2.
+#
+# Nachgeschärft für kleine Datenmengen (Version 2, nur auf der Kalibrierungshälfte des
+# Messrasters, docs/annahmen.md A34): Jede Vorverarbeitung hat einen festen Grundaufwand
+# (Aufruf aus Python, Speicher anlegen), z. B. Hash-Aufbau ≈ 960 ns schon bei n = 10. Bei
+# kleinem n ist das viel teurer, als die "Durchläufe" vermuten lassen. Gemessene Break-even-
+# Punkte (grid_components.csv, Kalibrierungshälfte): Hashtabelle bei n = 10 nach ≈ 100,
+# bei n = 100 nach ≈ 38 Anfragen; Liste in Hashtabelle bei n = 10 nach ≈ 73 Anfragen.
+# Für n ≤ 100 wird keine Stichprobe gezogen: Sie kostet dort (≈ 1,6 µs) mehr als
+# Dutzende lineare Suchen.
 # Nicht im Regelwerk: Verteilung und Duplikate. Sie ändern in den Messungen die Wahl nicht,
 # weil die Interpolationssuche in keiner Messung die verzweigungsfreie binäre Suche
 # schlägt (distribution.csv, size_speedup.csv); siehe docs/annahmen.md.
@@ -33,10 +42,30 @@ nodes:
     feature: is_list
     op: "=="
     threshold: 1
-    "yes": list_scans
+    "yes": list_tiny
     "no": tiny
     reason: "Auf einer Liste ist nur sequenzieller Zugriff möglich, Verfahren mit Direktzugriff scheiden aus."
     sources: [shneiderman1978]
+
+  list_tiny:
+    question: "Ist die Liste sehr klein (n ≤ 16)?"
+    feature: n
+    op: "<="
+    threshold: 16
+    "yes": list_tiny_many
+    "no": list_scans
+    reason: "Bei sehr kleinen Listen überwiegt der feste Grundaufwand jeder Vorverarbeitung."
+    sources: []
+
+  list_tiny_many:
+    question: "Werden mindestens 100 Anfragen erwartet?"
+    feature: queries
+    op: ">="
+    threshold: 100
+    "yes": leaf_list_hash
+    "no": leaf_list_linear
+    reason: "Das Kopieren einer Liste mit n = 10 in eine Hashtabelle lohnt sich erst nach etwa 73 Anfragen (eigene Messung)."
+    sources: [richter2015]
 
   list_scans:
     question: "Erwartet die lineare Suche mindestens 2 komplette Listendurchläufe?"
@@ -63,20 +92,50 @@ nodes:
     feature: n
     op: "<="
     threshold: 16
-    "yes": tiny_scans
-    "no": scans_hash
+    "yes": tiny_many
+    "no": small
     reason: "Auf sehr kleinen Arrays ist die lineare Suche schneller als die binäre Suche."
     sources: [vansandt2019]
 
-  tiny_scans:
-    question: "Erwartet die lineare Suche mindestens 20 komplette Durchläufe?"
-    feature: linear_scans
+  tiny_many:
+    question: "Werden mindestens 200 Anfragen erwartet?"
+    feature: queries
     op: ">="
-    threshold: 20
+    threshold: 200
     "yes": leaf_hash
     "no": leaf_linear_tiny
-    reason: "Auch auf kleinen Arrays lohnt sich eine Hashtabelle, wenn sehr viele Anfragen anstehen."
+    reason: "Bei n ≤ 16 lohnt sich die Hashtabelle wegen ihres festen Grundaufwands erst nach etwa 100 bis 200 Anfragen (eigene Messung)."
     sources: [richter2015]
+
+  small:
+    question: "Ist die Datenmenge klein (n ≤ 100)?"
+    feature: n
+    op: "<="
+    threshold: 100
+    "yes": small_many
+    "no": scans_hash
+    reason: "Bei kleinen Arrays ist schon die Stichprobe teurer als Dutzende lineare Suchen, deshalb wird ohne sie entschieden."
+    sources: [kerschke2019]
+
+  small_many:
+    question: "Werden mindestens 40 Anfragen erwartet?"
+    feature: queries
+    op: ">="
+    threshold: 40
+    "yes": leaf_hash
+    "no": small_sorted_known
+    reason: "Bei n = 100 lohnt sich die Hashtabelle nach etwa 38 Anfragen (eigene Messung)."
+    sources: [richter2015]
+
+  small_sorted_known:
+    question: "Ist garantiert, dass die Daten sortiert sind?"
+    feature: sorted_known
+    op: "=="
+    threshold: 1
+    "yes": leaf_binary
+    "no": leaf_linear_small
+    reason: "Ohne Garantie müsste geprüft werden, und Prüfung plus Stichprobe kosten bei kleinen Arrays mehr als die lineare Suche."
+    sources: []
 
   scans_hash:
     question: "Erwartet die lineare Suche mindestens 20 komplette Durchläufe?"
@@ -193,6 +252,11 @@ leaves:
     strategy: binary_branchless
     reason: "Auf sortierten Daten ist die verzweigungsfreie binäre Suche in allen Messungen das schnellste Verfahren ohne Vorverarbeitung."
     sources: [khuong2017]
+
+  leaf_linear_small:
+    strategy: linear
+    reason: "Bei kleinen Arrays und wenigen Anfragen ist die lineare Suche günstiger als jede Prüfung oder Vorverarbeitung."
+    sources: [vansandt2019]
 
   leaf_linear_unsorted:
     strategy: linear

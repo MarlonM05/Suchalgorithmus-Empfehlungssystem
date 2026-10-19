@@ -296,3 +296,37 @@ liest): ½ bei gleichverteilten Treffern, 1 bei Fehlschlägen und der
 Mittelwert der Trefferposition (1 % von n) bei vorne gehäuften Treffern. Der
 letzte Wert ist an den Anfragegenerator gebunden (A15). In der Anwendung
 muss der Nutzer ihn einschätzen.
+
+### A34: Nachschärfung des Regelwerks für kleine Datenmengen (Version 2)
+Version 1 des Regelwerks leitete alle Schwellen aus M3 ab. Dort wurde die
+Amortisation erst ab n = 1 000 gemessen. Bei n ≤ 100 empfahl Version 1
+deshalb zu früh eine Hashtabelle oder Sortierprüfung, weil jede
+Vorverarbeitung einen festen Grundaufwand hat (z. B. Hash-Aufbau ≈ 960 ns
+schon bei n = 10). Version 2 ergänzt eigene Fragen für n ≤ 16 und n ≤ 100
+(Arrays) bzw. n ≤ 16 (Listen) mit Schwellen in Anfragen statt in Durchläufen
+und verzichtet bei n ≤ 100 auf die Stichprobe.
+
+Die Schwellen (200, 40 und 100 Anfragen) stammen aus den gemessenen
+Break-even-Punkten und wurden **nur auf der Kalibrierungshälfte** verglichen
+(Varianten mit 50/100/200, 20/40/100, 50/100 Anfragen). Die Testhälfte
+blieb dabei unberührt. Ergebnisse auf der Testhälfte:
+
+| Regelwerk | Trefferquote | Slowdown ohne / mit Analysekosten | Lücke geschlossen (geom.) ohne / mit |
+|---|---|---|---|
+| Version 1 (nur M3) | 84,1 % | 1,122 / 1,340 | 91,2 % / 77,6 % |
+| Version 2 | 87,3 % | 1,078 / 1,236 | 94,2 % / 83,8 % |
+
+Das Raster enthält bei kleinen Datenmengen nur n = 10 und n = 100 sowie
+die Anfragezahlen 1, 3, 10, 30, 100, 300, …. Schwellen zwischen diesen
+Stufen (z. B. 40 statt 100) unterscheidet es nicht, dort entscheidet der
+gemessene Break-even-Punkt.
+
+### A35: Gedrosselte CPU während des Messrasters
+Im Messraster (19.10.2026) sind alle Zeiten gleichmäßig etwa doppelt so hoch
+wie in der Messreihe von M3 (16.10.2026), z. B. lineare Suche bei n = 10⁶:
+≈ 230 µs statt ≈ 113 µs. Der Faktor ist vom Anfang bis zum Ende des Laufs
+konstant, ein schleichender Effekt wie Überhitzung ist daher
+unwahrscheinlich. Vermutete Ursache: gedrosselte CPU (Akkubetrieb,
+Stromsparmodus oder Effizienzkerne). Weil alle Komponenten gleich betroffen
+sind, bleiben Verhältnisse und Empfehlungen weitgehend gleich. Die absoluten
+Zeiten aus Raster und M3 sollten aber nicht direkt verglichen werden.
