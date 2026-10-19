@@ -1,0 +1,46 @@
+|--- Verkettete Liste <= 0.50
+|   |--- log₁₀(erwartete Durchläufe) <= 0.94
+|   |   |--- Duplikatanteil <= -0.50
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 0.41
+|   |   |   |   |--- class: linear
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  0.41
+|   |   |   |   |--- class: linear
+|   |   |--- Duplikatanteil >  -0.50
+|   |   |   |--- Anfragen pro Element (q/n) <= 0.07
+|   |   |   |   |--- class: binary_branchless
+|   |   |   |--- Anfragen pro Element (q/n) >  0.07
+|   |   |   |   |--- class: linear
+|   |--- log₁₀(erwartete Durchläufe) >  0.94
+|   |   |--- Anfragen pro Element (q/n) <= 0.65
+|   |   |   |--- Duplikatanteil <= -0.50
+|   |   |   |   |--- class: hash
+|   |   |   |--- Duplikatanteil >  -0.50
+|   |   |   |   |--- class: binary_branchless
+|   |   |--- Anfragen pro Element (q/n) >  0.65
+|   |   |   |--- log₁₀(n) <= 1.50
+|   |   |   |   |--- class: linear
+|   |   |   |--- log₁₀(n) >  1.50
+|   |   |   |   |--- class: hash
+|--- Verkettete Liste >  0.50
+|   |--- log₁₀(erwartete Durchläufe) <= 0.26
+|   |   |--- Sortierung garantiert <= 0.50
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 0.09
+|   |   |   |   |--- class: list_linear
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  0.09
+|   |   |   |   |--- class: list_linear
+|   |   |--- Sortierung garantiert >  0.50
+|   |   |   |--- log₁₀(n) <= 4.50
+|   |   |   |   |--- class: list_linear
+|   |   |   |--- log₁₀(n) >  4.50
+|   |   |   |   |--- class: list_jump
+|   |--- log₁₀(erwartete Durchläufe) >  0.26
+|   |   |--- log₁₀(n) <= 2.50
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 2.09
+|   |   |   |   |--- class: list_linear
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  2.09
+|   |   |   |   |--- class: list_hash
+|   |   |--- log₁₀(n) >  2.50
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 0.59
+|   |   |   |   |--- class: list_hash
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  0.59
+|   |   |   |   |--- class: list_hash
