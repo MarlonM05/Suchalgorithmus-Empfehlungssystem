@@ -1,0 +1,205 @@
+# Regelwerk des Empfehlungssystems (Entscheidungsgraph nach dem Vorbild von [richter2015]).
+#
+# Aufbau:
+#   - Entscheidungsknoten: Frage, Merkmal, Vergleich, Schwelle, Ziel bei "ja" / "nein",
+#     Begründung der Frage und Quellen.
+#   - Blätter: empfohlene Strategie, Begründung in einem Satz, Quellen.
+# Merkmale: siehe recommender/rules/decision.py (selection_features).
+#
+# Reihenfolge der Fragen: Zuerst die kostenlosen Merkmale (Struktur, Datengröße,
+# Nutzerangaben zu den Anfragen). Die Stichprobe (looks_sorted) wird erst gezogen,
+# wenn ein Knoten sie braucht, weil sie etwa 50 µs kostet [kerschke2019].
+#
+# Herkunft der Schwellen (vollständige Messreihe M3, Apple M5, results/full/):
+#   - n <= 16: lineare Suche schneller als binäre bei n = 10 (Faktor 1,42), langsamer
+#     bei n = 30 (size_speedup.csv); 16 liegt zwischen den Messpunkten.
+#   - Erwartete Durchläufe >= 20: Aufbau der Hashtabelle kostet 7 bis 34 komplette
+#     Durchläufe der linearen Suche (n = 10^3 ... 10^7, amortization.csv); Break-even bei
+#     14 bis 68 Anfragen mit gleichverteilten Treffern (amortization_break_even.csv).
+#   - Erwartete Durchläufe >= 1: die vollständige Sortierprüfung kostet einen Durchlauf
+#     (2,0- bis 2,9-mal eine lineare Suche mit gleichverteilten Treffern, analysis_cost.csv).
+#   - Anfragen pro Element >= 0,2: ab q ≈ 0,2 · n schlägt die Hashtabelle die
+#     verzweigungsfreie binäre Suche auf sortierten Daten (n = 10^3 ... 10^7).
+#   - Liste: Kopieren in eine Hashtabelle kostet etwa 1,6 Listendurchläufe (n = 10^6) -> >= 2.
+# Nicht im Regelwerk: Verteilung und Duplikate. Sie ändern in den Messungen die Wahl nicht,
+# weil die Interpolationssuche in keiner Messung die verzweigungsfreie binäre Suche
+# schlägt (distribution.csv, size_speedup.csv); siehe docs/annahmen.md.
+
+start: is_list
+
+nodes:
+  is_list:
+    question: "Liegen die Daten in einer verketteten Liste?"
+    feature: is_list
+    op: "=="
+    threshold: 1
+    "yes": list_scans
+    "no": tiny
+    reason: "Auf einer Liste ist nur sequenzieller Zugriff möglich, Verfahren mit Direktzugriff scheiden aus."
+    sources: [shneiderman1978]
+
+  list_scans:
+    question: "Erwartet die lineare Suche mindestens 2 komplette Listendurchläufe?"
+    feature: linear_scans
+    op: ">="
+    threshold: 2
+    "yes": leaf_list_hash
+    "no": list_sorted_known
+    reason: "Die Liste einmal in eine Hashtabelle zu kopieren kostet etwa 1,6 Durchläufe (eigene Messung)."
+    sources: [richter2015]
+
+  list_sorted_known:
+    question: "Ist garantiert, dass die Liste sortiert ist?"
+    feature: sorted_known
+    op: "=="
+    threshold: 1
+    "yes": leaf_list_jump
+    "no": leaf_list_linear
+    reason: "Eine Prüfung der Sortierung würde die Liste einmal komplett durchlaufen."
+    sources: []
+
+  tiny:
+    question: "Ist die Datenmenge sehr klein (n ≤ 16)?"
+    feature: n
+    op: "<="
+    threshold: 16
+    "yes": tiny_scans
+    "no": scans_hash
+    reason: "Auf sehr kleinen Arrays ist die lineare Suche schneller als die binäre Suche."
+    sources: [vansandt2019]
+
+  tiny_scans:
+    question: "Erwartet die lineare Suche mindestens 20 komplette Durchläufe?"
+    feature: linear_scans
+    op: ">="
+    threshold: 20
+    "yes": leaf_hash
+    "no": leaf_linear_tiny
+    reason: "Auch auf kleinen Arrays lohnt sich eine Hashtabelle, wenn sehr viele Anfragen anstehen."
+    sources: [richter2015]
+
+  scans_hash:
+    question: "Erwartet die lineare Suche mindestens 20 komplette Durchläufe?"
+    feature: linear_scans
+    op: ">="
+    threshold: 20
+    "yes": many_sorted_known
+    "no": scans_verify
+    reason: "Der Aufbau einer Hashtabelle kostet 7 bis 34 Durchläufe der linearen Suche (eigene Messung)."
+    sources: [richter2015]
+
+  many_sorted_known:
+    question: "Ist garantiert, dass die Daten sortiert sind?"
+    feature: sorted_known
+    op: "=="
+    threshold: 1
+    "yes": many_per_element
+    "no": many_looks_sorted
+    reason: "Nur auf sortierten Daten kommt die binäre Suche ohne Vorverarbeitung in Frage."
+    sources: []
+
+  many_looks_sorted:
+    question: "Wirkt die Stichprobe sortiert (kein Paar in falscher Reihenfolge)?"
+    feature: looks_sorted
+    op: "=="
+    threshold: 1
+    "yes": many_per_element
+    "no": leaf_hash
+    reason: "Die Stichprobe ist günstig, beweist aber keine Sortierung; vor der binären Suche wird vollständig geprüft."
+    sources: [kerschke2019]
+
+  many_per_element:
+    question: "Gibt es mindestens 0,2 Anfragen pro Element (q ≥ n/5)?"
+    feature: queries_per_n
+    op: ">="
+    threshold: 0.2
+    "yes": leaf_hash_sorted
+    "no": leaf_binary
+    reason: "Ab etwa q = 0,2 · n schlägt die Hashtabelle auch auf sortierten Daten die binäre Suche (eigene Messung)."
+    sources: [richter2015, khuong2017]
+
+  scans_verify:
+    question: "Erwartet die lineare Suche mindestens einen kompletten Durchlauf?"
+    feature: linear_scans
+    op: ">="
+    threshold: 1
+    "yes": few_sorted_known
+    "no": none_sorted_known
+    reason: "Die vollständige Sortierprüfung kostet selbst einen Durchlauf."
+    sources: []
+
+  few_sorted_known:
+    question: "Ist garantiert, dass die Daten sortiert sind?"
+    feature: sorted_known
+    op: "=="
+    threshold: 1
+    "yes": leaf_binary
+    "no": few_looks_sorted
+    reason: "Mit Garantie entfällt die Sortierprüfung."
+    sources: []
+
+  few_looks_sorted:
+    question: "Wirkt die Stichprobe sortiert (kein Paar in falscher Reihenfolge)?"
+    feature: looks_sorted
+    op: "=="
+    threshold: 1
+    "yes": leaf_binary
+    "no": leaf_linear_unsorted
+    reason: "Die Stichprobe ist günstig, beweist aber keine Sortierung; vor der binären Suche wird vollständig geprüft."
+    sources: [kerschke2019]
+
+  none_sorted_known:
+    question: "Ist garantiert, dass die Daten sortiert sind?"
+    feature: sorted_known
+    op: "=="
+    threshold: 1
+    "yes": leaf_binary
+    "no": leaf_linear_few
+    reason: "Ohne Garantie wäre schon die Sortierprüfung teurer als die lineare Suche."
+    sources: []
+
+leaves:
+  leaf_list_hash:
+    strategy: list_hash
+    reason: "Bei vielen Listendurchläufen lohnt es sich, die Liste einmal in eine Hashtabelle zu kopieren, danach kostet jede Anfrage nur O(1)."
+    sources: [richter2015]
+
+  leaf_list_jump:
+    strategy: list_jump
+    reason: "Auf einer garantiert sortierten Liste spart die Sprungsuche Vergleiche, besucht aber ähnlich viele Knoten wie die lineare Suche."
+    sources: [shneiderman1978]
+
+  leaf_list_linear:
+    strategy: list_linear
+    reason: "Bei wenigen Anfragen lohnt keine Vorverarbeitung, und auf einer Liste bleibt nur der sequenzielle Durchlauf."
+    sources: [vansandt2019]
+
+  leaf_linear_tiny:
+    strategy: linear
+    reason: "Auf sehr kleinen Arrays ist die lineare Suche am schnellsten, weil sie weder Vorverarbeitung noch Sprünge im Speicher braucht."
+    sources: [vansandt2019]
+
+  leaf_hash:
+    strategy: hash
+    reason: "Der Aufbau der Hashtabelle kostet nur einige Durchläufe der linearen Suche, danach ist jede Anfrage in erwartet O(1) beantwortet."
+    sources: [richter2015]
+
+  leaf_hash_sorted:
+    strategy: hash
+    reason: "Selbst auf sortierten Daten schlägt die Hashtabelle die binäre Suche, wenn mehr als etwa n/5 Anfragen anstehen."
+    sources: [richter2015]
+
+  leaf_binary:
+    strategy: binary_branchless
+    reason: "Auf sortierten Daten ist die verzweigungsfreie binäre Suche in allen Messungen das schnellste Verfahren ohne Vorverarbeitung."
+    sources: [khuong2017]
+
+  leaf_linear_unsorted:
+    strategy: linear
+    reason: "Die Daten sind nicht sortiert, und für eine Hashtabelle sind zu wenige Anfragen zu erwarten."
+    sources: [vansandt2019]
+
+  leaf_linear_few:
+    strategy: linear
+    reason: "Bei weniger als einem erwarteten Durchlauf ist schon die Sortierprüfung teurer als die lineare Suche."
+    sources: [vansandt2019]

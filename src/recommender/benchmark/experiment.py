@@ -42,9 +42,13 @@ def result_path(experiment: str, mode: str, suffix: str = ".csv") -> Path:
     return RESULTS_ROOT / mode / f"{experiment}{suffix}"
 
 
-def save_results(frame: pd.DataFrame, experiment: str, mode: str) -> Path:
-    """Write raw results together with environment, mode, seed and timing settings."""
-    settings = TIMING[mode]
+def save_results(frame: pd.DataFrame, experiment: str, mode: str, settings: TimingSettings | None = None) -> Path:
+    """Write raw results together with environment, mode, seed and timing settings.
+
+    ``settings`` defaults to the standard timing of the mode; experiments with
+    their own timing (e.g. the grid) pass theirs, so the file logs what was used.
+    """
+    settings = settings or TIMING[mode]
     metadata = {
         "experiment": experiment,
         "mode": mode,
