@@ -220,3 +220,79 @@ Empfehlungssystem (M4) abgedeckt.
 Das geometrische Mittel der Speedups gegenüber der binären Suche
 [fleming1986] gewichtet jede gemessene Datengröße gleich. Die Wahl der
 Größenstufen beeinflusst damit das Mittel.
+
+## M4 – Empfehlungssystem
+
+### A25: Messraster
+Für Training und Bewertung wird jede Kombination gemessen aus Datengröße
+(10, 10², …, 10⁶), fünf Verteilungen, drei Sortiergraden, drei
+Duplikatanteilen (0 %, 10 %, 50 %) und zwei Speicherstrukturen, also 540
+Datenmengen, jeweils mit drei Zugriffsmustern (Treffer gleichverteilt, Treffer
+vorne gehäuft, 50 % Fehlschläge). n = 10⁷ fehlt aus Zeit- und
+Speichergründen. Pro Messpunkt gibt es 10 statt 30 Wiederholungen, weil die
+beste Strategie meist deutlich vorne liegt. Die Anzahl der Anfragen q (1 bis
+10⁶) wird nicht gemessen, sondern über das lineare Kostenmodell (A22)
+eingerechnet.
+
+### A26: Strategieraum
+Empfohlen werden Strategien, also Suchverfahren samt Vorverarbeitung:
+lineare Suche, die Verfahren für sortierte Daten (mit vorheriger
+Sortierprüfung, wenn die Sortierung nicht garantiert ist), „Hashtabelle
+aufbauen + Lookup“ und „Sortieren + verzweigungsfreie binäre Suche“, für
+Listen „lineare Suche“, „Sprungsuche“ und „in Hashtabelle kopieren“. Das
+Leistungsmaß ist allein die Zeit. Speicherbedarf und Bereichsanfragen, bei
+denen Sortieren der Hashtabelle überlegen wäre, sind nicht berücksichtigt.
+Deshalb gewinnt die Hashtabelle bei vielen Anfragen fast immer.
+
+### A27: Sortiergarantie und Sortierprüfung
+Ob die Sortierung garantiert ist, gibt der Nutzer an (wie die Speicherstruktur).
+Ohne Garantie kostet jede Strategie, die Sortierung voraussetzt, zusätzlich die
+vollständige Prüfung (A16). Schlägt die Prüfung fehl, weil die Stichprobe eine
+Unordnung übersehen hat, wird ihr Abbruchzeitpunkt bezahlt und mit dem Wissen
+„unsortiert“ neu entschieden.
+
+### A28: Analysekosten in der Bewertung
+Alle Maße werden mit und ohne die Kosten der Merkmalsanalyse angegeben. Die
+Analysekosten fallen nur an, wenn der Entscheidungsweg ein Stichprobenmerkmal
+braucht. Das Regelwerk stellt diese Fragen deshalb zuletzt [kerschke2019].
+Der konstante Aufruf-Overhead (A21) ist in allen gemessenen Kosten enthalten.
+
+### A29: Bestes Verfahren (Oracle)
+Das Oracle ist die Strategie mit den geringsten berechneten Gesamtkosten.
+Nahezu gleich schnelle Strategien (z. B. klassische und verzweigungsfreie
+binäre Suche) werden dadurch willkürlich getrennt. Deshalb wird neben der
+exakten Trefferquote auch der Anteil der Empfehlungen innerhalb von 10 % des
+Optimums berichtet.
+
+### A30: Aufteilung in Kalibrierung und Test
+Die Datenmengen werden je Kombination aus Größe und Struktur zur Hälfte in
+Kalibrierung und Test aufgeteilt. Keine Datenmenge liegt in beiden Hälften,
+auch nicht mit anderem q oder Zugriffsmuster. Der Baum wird auf der
+Kalibrierungshälfte trainiert, der Single Best Solver dort bestimmt, und
+Anpassungen am Regelwerk dürfen sich nur auf die Kalibrierungshälfte stützen.
+Alle Maße beziehen sich auf die Testhälfte. Der Single Best Solver wird je
+Speicherstruktur unter den immer anwendbaren Strategien gewählt (bestes
+geometrisches Mittel des Slowdowns).
+
+### A31: Entscheidungsbaum
+scikit-learn, `criterion="entropy"` (ID3 [quinlan1986]), maximale Tiefe 4,
+mindestens 20 Fälle pro Blatt, Eingaben wie beim Regelwerk (keine
+Generatoreinstellungen). Gelernt wird eine reine Klassifikation auf die
+Oracle-Strategie, nicht kostensensitiv: Ein teurer Fehler zählt im Training
+so viel wie ein billiger. Empfiehlt der Baum eine Strategie für die falsche
+Speicherstruktur, wird sie durch ihr Gegenstück ersetzt (z. B. Hashtabelle →
+Liste in Hashtabelle), und der Fall wird gezählt.
+
+### A32: Stichproben-Meta-Algorithmus [vansandt2019]
+Jedes Verfahren beantwortet 10 Probeanfragen, das schnellste wird gewählt (5
+Durchgänge je Datenmenge und Zugriffsmuster). Verglichen wird nur auf
+sortierten Arrays mit Sortiergarantie, weil der Meta-Algorithmus keine
+Vorverarbeitung vorsieht. Die Probezeit wird voll angerechnet, die
+Probeanfragen zählen nicht als beantwortete Anfragen.
+
+### A33: Erwartete Durchläufe der linearen Suche
+Die Regeln nutzen q · (Anteil des Arrays, den eine lineare Suche im Mittel
+liest): ½ bei gleichverteilten Treffern, 1 bei Fehlschlägen und der
+Mittelwert der Trefferposition (1 % von n) bei vorne gehäuften Treffern. Der
+letzte Wert ist an den Anfragegenerator gebunden (A15). In der Anwendung
+muss der Nutzer ihn einschätzen.

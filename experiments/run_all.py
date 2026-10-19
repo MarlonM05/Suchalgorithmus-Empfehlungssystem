@@ -21,6 +21,8 @@ EXPERIMENTS = [
     "exp_structure.py",
     "exp_amortization.py",
     "exp_analysis_cost.py",
+    "exp_grid.py",  # measurement grid for the recommender (M4)
+    "exp_recommender.py",  # evaluation of the recommender (reads the grid)
 ]
 
 

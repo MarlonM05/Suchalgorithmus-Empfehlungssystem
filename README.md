@@ -4,7 +4,7 @@ Hochschulprojekt (DHBW Ravensburg, Modul Theoretische Informatik): ein Tool,
 das anhand der Eigenschaften einer Datenmenge ein passendes Suchverfahren
 empfiehlt, es automatisch ausführt und den Entscheidungsweg grafisch darstellt.
 
-> Stand: Meilenstein M3 (Suchverfahren, Daten, Merkmale, Messumgebung und Experimente). Die vollständige README folgt in M6.
+> Stand: Meilenstein M4 (Suchverfahren, Daten, Merkmale, Messumgebung, Experimente, Empfehlungssystem). Die vollständige README folgt in M6.
 
 ## Installation
 
@@ -75,3 +75,21 @@ Rechner während der Messung nicht benutzen.
 | `exp_structure.py` | Speicherstruktur | Array gegenüber verketteter Liste |
 | `exp_amortization.py` | Sortierung + Anfragen | Gesamtkosten T(q), Break-even-Punkte |
 | `exp_analysis_cost.py` | Analysekosten | Kosten gegenüber Suche, Genauigkeit nach Stichprobengröße |
+| `exp_grid.py` | alle Merkmale kombiniert | Messraster für das Empfehlungssystem (nur CSV) |
+| `exp_recommender.py` | – | Bewertung von Regelwerk und Entscheidungsbaum, Tabellen (CSV, LaTeX) |
+
+## Empfehlungssystem
+
+`recommender.rules` wählt eine **Strategie** (Suchverfahren samt
+Vorverarbeitung) für Daten und erwartete Anfragen:
+
+- **Regelwerk**: Entscheidungsgraph in
+  [`src/recommender/rules/rules.yaml`](src/recommender/rules/rules.yaml). Jeder
+  Knoten hat eine Frage, Schwelle, Begründung und Quellen, jedes Blatt eine
+  Empfehlung mit Begründung in einem Satz. Die Schwellen stammen aus den
+  Messungen in `results/full/`.
+- **Entscheidungsbaum**: scikit-learn (Entropie, Tiefe 4), trainiert auf dem
+  Messraster und gespeichert als `results/<modus>/learned_tree.json`.
+- **Bewertung** (`exp_recommender.py`): Trefferquote, Slowdown, geschlossene
+  Lücke zwischen Single Best Solver und Oracle, jeweils mit und ohne
+  Analysekosten, auf einer getrennten Testhälfte.
