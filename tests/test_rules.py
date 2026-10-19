@@ -65,6 +65,13 @@ def test_every_leaf_and_node_has_a_reason(rulebook):
     "features, workload, expected",
     [
         (features_for(n=10), Workload(queries=5), "linear"),
+        (features_for(n=10), Workload(queries=100), "linear"),  # fixed overhead of the hash table
+        (features_for(n=10), Workload(queries=300), "hash"),
+        (features_for(n=100), Workload(queries=10), "linear"),
+        (features_for(n=100), Workload(queries=10, sorted_known=True), "binary_branchless"),
+        (features_for(n=100), Workload(queries=50), "hash"),
+        (features_for(n=10, structure="linked_list"), Workload(queries=50), "list_linear"),
+        (features_for(n=10, structure="linked_list"), Workload(queries=100), "list_hash"),
         (features_for(), Workload(queries=1), "linear"),
         (features_for(), Workload(queries=1, sorted_known=True), "binary_branchless"),
         (features_for(), Workload(queries=100), "binary_branchless"),
@@ -90,6 +97,12 @@ def test_sample_is_only_needed_when_a_sampled_feature_is_used(rulebook):
     needs_sample = rulebook.decide(selection_features(features_for(), Workload(queries=100)))
     assert needs_sample.uses_sampled_features
     assert "looks_sorted" in [step.feature for step in needs_sample.path]
+
+
+def test_small_arrays_are_decided_without_sample(rulebook):
+    for queries in (1, 10, 39, 40, 1000):
+        recommendation = rulebook.decide(selection_features(features_for(n=100), Workload(queries=queries)))
+        assert not recommendation.uses_sampled_features
 
 
 def test_decision_path_is_consistent(rulebook):
