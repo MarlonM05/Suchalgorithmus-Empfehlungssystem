@@ -97,6 +97,7 @@ pmset -g | grep lowpowermode    # muss "lowpowermode 0" zeigen
 | `exp_structure.py` | Speicherstruktur | Array gegenüber verketteter Liste |
 | `exp_amortization.py` | Sortierung + Anfragen | Gesamtkosten T(q), Break-even-Punkte |
 | `exp_analysis_cost.py` | Analysekosten | Kosten gegenüber Suche, Genauigkeit nach Stichprobengröße |
+| `exp_size_datasets.py` | Datengröße (Robustheit) | wie `exp_size.py`, aber 5 Datensätze pro Größe; zeigt, ob Ergebnisse vom Datensatz abhängen (nicht in `run_all.py`, Rechnername über `--label`) |
 | `exp_grid.py` | alle Merkmale kombiniert | Messraster für das Empfehlungssystem (nur CSV) |
 | `exp_recommender.py` | – | Bewertung von Regelwerk und Entscheidungsbaum, Tabellen (CSV, LaTeX) |
 
