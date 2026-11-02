@@ -11,13 +11,21 @@ sets shows whether this is a property of the algorithm or of the data set.
 Data set 0 of every size uses the same seed as exp_size.py, so its values are
 directly comparable with size.csv.
 
-Outputs (results/<mode>/):
-    size_datasets.csv             raw measurements
-    size_datasets_summary.csv     per n and algorithm: median over the data sets
-                                  of the per-data-set medians, plus min and max
-    size_datasets_runtime.pdf     ns per query over n (median over data sets)
-    size_datasets_speedup.csv     speedup vs. binary search per n, plus geometric mean
+Every team member can run it: all file names contain the computer name, so
+runs on different machines never overwrite each other. The report takes the
+absolute times from the measurement laptop (A18) and uses the other machines
+only to compare ratios.
+
+Outputs (results/<mode>/, <host> = computer name):
+    size_datasets_<host>.csv             raw measurements
+    size_datasets_<host>_summary.csv     per n and algorithm: median over the data sets
+                                         of the per-data-set medians, plus min and max
+    size_datasets_<host>_runtime.pdf     ns per query over n (median over data sets)
+    size_datasets_<host>_speedup.csv     speedup vs. binary search per n, plus geometric mean
 """
+
+import platform
+import re
 
 import pandas as pd
 
@@ -28,7 +36,8 @@ from recommender.viz.plots import plot_over_size
 
 from exp_size import QUERY_POOL, SIZES
 
-NAME = "size_datasets"
+HOST = re.sub(r"[^A-Za-z0-9-]+", "-", platform.node().removesuffix(".local")).strip("-") or "unknown"
+NAME = f"size_datasets_{HOST}"
 DATASETS = 5
 DATASET_SEED_STEP = 1_000  # keeps the seeds of different sizes and data sets apart
 
@@ -74,6 +83,10 @@ def plot(mode: str) -> None:
 
 def main() -> None:
     args = parse_args(__doc__.splitlines()[0])
+    if platform.system() != "Darwin" and not args.plot_only:
+        # The power check in environment.py only works on macOS.
+        print("HINWEIS: Netzteil anschließen und den Energiemodus auf höchste Leistung stellen, sonst läuft die CPU gedrosselt.", flush=True)
+    print(f"Rechner: {HOST}", flush=True)
     if not args.plot_only:
         frame = run_configurations(configurations(args.mode), TIMING[args.mode], seed=SEED)
         save_results(frame, NAME, args.mode)
