@@ -13,6 +13,7 @@ mode never overwrites results of a full run.
 
 import argparse
 from pathlib import Path
+from typing import Callable
 
 import pandas as pd
 
@@ -30,11 +31,16 @@ TIMING = {
 }
 
 
-def parse_args(description: str) -> argparse.Namespace:
-    """Command line of every experiment script."""
+def parse_args(description: str, configure: Callable[[argparse.ArgumentParser], None] | None = None) -> argparse.Namespace:
+    """Command line of every experiment script.
+
+    ``configure`` can add arguments that only one experiment needs.
+    """
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--mode", choices=MODES, default="quick", help="quick check or full series (default: quick)")
     parser.add_argument("--plot-only", action="store_true", help="only redraw the figures from the existing CSV")
+    if configure is not None:
+        configure(parser)
     args = parser.parse_args()
     warning = throttling_warning()
     if warning and not args.plot_only:

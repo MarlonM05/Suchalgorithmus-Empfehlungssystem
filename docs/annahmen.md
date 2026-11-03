@@ -379,3 +379,25 @@ den Messreihen vergleichbar.
 - Der Entscheidungsweg wird standardmäßig kompakt gezeigt: nur der Weg und
   an jeder Frage die nicht gewählte Abzweigung. Der vollständige Graph ist
   zuschaltbar.
+
+## Ergänzung: Robustheit gegenüber dem Datensatz
+
+### A40: Ein Datensatz pro Größe reicht
+`exp_size.py` misst jede Datengröße auf einem einzigen Datensatz.
+`exp_size_datasets.py` wiederholt die Messung mit fünf Datensätzen pro Größe
+(Datensatz 0 mit demselben Seed wie `exp_size.py`) und fasst sie mit dem
+Median der Datensatz-Mediane zusammen. Ein Schnelltest auf dem Messlaptop
+(Apple M5, Netzteil, Stromsparmodus aus) ergab:
+
+- Binäre und verzweigungsfreie binäre Suche unterscheiden sich zwischen den
+  Datensätzen um höchstens 4 %, die lineare Suche um höchstens 10 %.
+- Der Hash-Lookup schwankt bei n ≤ 100 um bis zu den Faktor 6. Seine Zeiten
+  liegen dort bei etwa 1 ns, also im Bereich des Schleifen-Overheads (A19).
+- Dass die binäre Suche bei n = 1 000 schneller ist als bei n = 100 und
+  n = 300, zeigt sich bei allen fünf Datensätzen. Es ist also eine
+  Eigenschaft der Größe, nicht eines einzelnen Datensatzes.
+
+Auf einem anderen Rechner wurden im Schnelltest Schwankungen der binären
+Suche von 38 bis 103 ns bei n = 100 beobachtet. Auf dem Messlaptop tritt
+das nicht auf. Vermutlich lag es an der Last oder Drosselung jenes Rechners.
+Für die Arbeit gelten nur die Zeiten des Messlaptops (A18).

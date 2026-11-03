@@ -134,20 +134,30 @@ def save_figure(fig: plt.Figure, path: Path) -> Path:
     return path
 
 
-def plot_over_size(summary, value: str, ylabel: str, title: str, path: Path, x: str = "n", band: bool = True) -> Path:
+def plot_over_size(
+    summary,
+    value: str,
+    ylabel: str,
+    title: str,
+    path: Path,
+    x: str = "n",
+    band: bool = True,
+    band_columns: tuple[str, str] = ("ci_low", "ci_high"),
+) -> Path:
     """Log-log line chart of ``value`` over the data size, one line per algorithm.
 
-    ``summary`` has one row per (x, algorithm). If ``band`` is set, the 95 %
-    bootstrap confidence interval of the median (``ci_low``/``ci_high``) is drawn
-    as a light band around the line.
+    ``summary`` has one row per (x, algorithm). If ``band`` is set, the range
+    between the two ``band_columns`` is drawn as a light band around the line;
+    by default the 95 % bootstrap confidence interval of the median.
     """
+    low, high = band_columns
     apply_style()
     fig, axes = plt.subplots()
     for algorithm in sort_algorithms(summary["algorithm"]):
         rows = summary[summary["algorithm"] == algorithm].sort_values(x)
         axes.plot(rows[x], rows[value], **style_kwargs(algorithm))
-        if band and "ci_low" in rows:
-            axes.fill_between(rows[x], rows["ci_low"], rows["ci_high"], color=ALGORITHM_STYLE[algorithm][1], alpha=0.12, linewidth=0)
+        if band and low in rows:
+            axes.fill_between(rows[x], rows[low], rows[high], color=ALGORITHM_STYLE[algorithm][1], alpha=0.12, linewidth=0)
     axes.set_xscale("log")
     axes.set_yscale("log")
     axes.set_xlabel("Datengröße n")
