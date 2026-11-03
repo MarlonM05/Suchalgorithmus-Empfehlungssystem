@@ -52,7 +52,7 @@ def main() -> None:
         f"Laufzeit nach Werteverteilung (n = {german_number(N[args.mode])}, sortiert)",
         result_path(NAME, args.mode, ".pdf"),
     )
-    print(f"done: results/{args.mode}/{NAME}*")
+    print(f"done: {result_path(NAME, args.mode).parent / f'{NAME}*'}")
 
 
 if __name__ == "__main__":

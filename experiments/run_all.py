@@ -2,6 +2,7 @@
 
     python experiments/run_all.py --mode quick       # functional check, about 1-2 minutes
     python experiments/run_all.py --mode full        # complete series for the paper (long)
+    python experiments/run_all.py --mode full --results-dir results/full_y
     python experiments/run_all.py --plot-only        # only redraw all figures from the CSVs
 
 For the full series: plug in the laptop, close other programs and do not use
@@ -19,9 +20,9 @@ EXPERIMENTS = [
     "exp_duplicates.py",
     "exp_access_pattern.py",
     "exp_structure.py",
+    "exp_grid.py",  # common measurement base for the recommender and amortization
     "exp_amortization.py",
     "exp_analysis_cost.py",
-    "exp_grid.py",  # measurement grid for the recommender (M4)
     "exp_recommender.py",  # evaluation of the recommender (reads the grid)
 ]
 

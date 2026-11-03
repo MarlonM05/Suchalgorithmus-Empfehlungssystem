@@ -55,7 +55,7 @@ def main() -> None:
         f"Laufzeit nach Zugriffsmuster (n = {german_number(N[args.mode])}, gleichverteilt, sortiert)",
         result_path(NAME, args.mode, ".pdf"),
     )
-    print(f"done: results/{args.mode}/{NAME}*")
+    print(f"done: {result_path(NAME, args.mode).parent / f'{NAME}*'}")
 
 
 if __name__ == "__main__":

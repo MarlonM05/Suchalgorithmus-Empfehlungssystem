@@ -46,7 +46,7 @@ def main() -> None:
     plot_over_size(summary, "median", "Laufzeit pro Anfrage [ns]", "Array (Direktzugriff) gegenüber verketteter Liste", result_path(NAME + "_runtime", args.mode, ".pdf"))
     counts = raw.groupby(["n", "algorithm"], as_index=False)["accesses"].first()
     plot_over_size(counts, "accesses", "Zugriffe pro Anfrage", "Gelesene Elemente bzw. besuchte Knoten", result_path(NAME + "_accesses", args.mode, ".pdf"), band=False)
-    print(f"done: results/{args.mode}/{NAME}*")
+    print(f"done: {result_path(NAME, args.mode).parent / f'{NAME}*'}")
 
 
 if __name__ == "__main__":

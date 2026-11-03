@@ -7,8 +7,8 @@ Every experiment can run in two modes:
 * ``full``: the complete series for the paper (30 repetitions, large data).
 
 Results go to ``results/<mode>/<experiment>.csv`` (raw values plus
-environment) and figures to ``results/<mode>/<experiment>*.pdf``, so the quick
-mode never overwrites results of a full run.
+environment) and figures to ``results/<mode>/<experiment>*.pdf`` by default.
+Use ``--results-dir`` to select a custom output directory.
 """
 
 import argparse
@@ -22,6 +22,7 @@ from .timing import TimingSettings
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 RESULTS_ROOT = PROJECT_ROOT / "results"
+RESULTS_DIR: Path | None = None
 MODES = ("quick", "full")
 SEED = 20261015  # fixed and logged in every result file [mytkowicz2009]
 
@@ -39,9 +40,12 @@ def parse_args(description: str, configure: Callable[[argparse.ArgumentParser], 
     parser = argparse.ArgumentParser(description=description)
     parser.add_argument("--mode", choices=MODES, default="quick", help="quick check or full series (default: quick)")
     parser.add_argument("--plot-only", action="store_true", help="only redraw the figures from the existing CSV")
+    parser.add_argument("--results-dir", type=Path, help="custom output directory for CSVs and figures")
     if configure is not None:
         configure(parser)
     args = parser.parse_args()
+    global RESULTS_DIR
+    RESULTS_DIR = args.results_dir
     warning = throttling_warning()
     if warning and not args.plot_only:
         print(warning, flush=True)
@@ -49,7 +53,8 @@ def parse_args(description: str, configure: Callable[[argparse.ArgumentParser], 
 
 
 def result_path(experiment: str, mode: str, suffix: str = ".csv") -> Path:
-    return RESULTS_ROOT / mode / f"{experiment}{suffix}"
+    output_dir = RESULTS_DIR if RESULTS_DIR is not None else RESULTS_ROOT / mode
+    return output_dir / f"{experiment}{suffix}"
 
 
 def save_results(frame: pd.DataFrame, experiment: str, mode: str, settings: TimingSettings | None = None) -> Path:

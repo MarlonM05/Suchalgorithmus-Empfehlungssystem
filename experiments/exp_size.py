@@ -20,7 +20,7 @@ from recommender.viz.plots import plot_over_size
 NAME = "size"
 SIZES = {
     "quick": [10, 100, 1_000, 10_000, 100_000],
-    "full": [10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000],
+    "full": [10, 16, 30, 32, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000],
 }
 QUERY_POOL = 10_000
 
@@ -55,7 +55,7 @@ def main() -> None:
         frame = run_configurations(configurations(args.mode), TIMING[args.mode], seed=SEED)
         save_results(frame, NAME, args.mode)
     plot(args.mode)
-    print(f"done: results/{args.mode}/{NAME}*")
+    print(f"done: {result_path(NAME, args.mode).parent / f'{NAME}*'}")
 
 
 if __name__ == "__main__":

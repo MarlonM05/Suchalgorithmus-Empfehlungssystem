@@ -72,12 +72,27 @@ Die Skripte in `experiments/` erzeugen die Messdaten (CSV mit
 Umgebungsprotokoll) und Diagramme (PDF) für die Ausarbeitung.
 
 ```bash
-python experiments/run_all.py --mode quick    # Funktionsprüfung, ca. 30 Sekunden
+python experiments/run_all.py --mode quick    # Funktionsprüfung (Grid zuerst, Laufzeit variiert)
 python experiments/run_all.py --mode full     # vollständige Messreihe für die Arbeit
+python experiments/run_all.py --mode full --results-dir results/full_y  # abweichender Ausgabeordner
 python experiments/run_all.py --plot-only     # nur Diagramme aus vorhandenen CSV neu zeichnen
 ```
 
-Ergebnisse landen in `results/quick/` bzw. `results/full/`. Vor der
+Die Grid-Dateien sind gemeinsame Rohdaten für die Empfehlungsauswertung und
+Amortisationsanalyse. `grid_features.csv` beschreibt Datensätze,
+`grid_components.csv` enthält Zeitkomponenten, `grid_operations.csv` die
+gezählten Vergleiche/Zugriffe und `grid_sampling.csv` die Probeläufe. Die
+Amortisationsanalyse nutzt nur exakt passende Grid-Szenarien und schreibt
+`amortization_summary.csv` sowie `amortization_validation.csv` mit ausgewählten
+vollständigen Läufen. In `amortization.pdf` steht q für die Zahl der Anfragen,
+die y-Achse für die modellierte Gesamtzeit; markierte Schnittpunkte zeigen,
+ab wann Sortieren plus binäre Suche bzw. Hashing die lineare Suche überholen.
+Das Grid muss daher vor `exp_amortization.py` vorliegen;
+`run_all.py` führt es in der richtigen Reihenfolge aus.
+
+Ergebnisse landen standardmäßig in `results/quick/` bzw. `results/full/`;
+mit `--results-dir` lässt sich für einen Lauf ein abweichender Ausgabeordner
+festlegen. Vor der
 vollständigen Messreihe: Netzteil anschließen, **Stromsparmodus ausschalten**
 (Systemeinstellungen → Batterie → Stromsparmodus „Nie“), andere Programme
 schließen, den Rechner während der Messung nicht benutzen. Im Stromsparmodus

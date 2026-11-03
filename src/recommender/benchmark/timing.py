@@ -95,12 +95,26 @@ def time_search(
     query_pool: np.ndarray,
     settings: TimingSettings,
     rng: np.random.Generator,
+    query_blocks: list[np.ndarray] | None = None,
 ) -> tuple[np.ndarray, int]:
     """Measure the runtime per query of ``algorithm`` on prepared ``data``.
+
+    If ``query_blocks`` is given, its per-repetition query sequence is reused.
+    This makes timing comparisons paired across algorithms while retaining
+    fresh query blocks between repetitions.
 
     Returns the raw nanoseconds per query of every measured repetition and
     the block length used.
     """
+    if query_pool.size == 0:
+        raise ValueError("query_pool must contain at least one query")
+    expected_blocks = settings.warmup + settings.repetitions
+    if query_blocks is not None and (
+        len(query_blocks) != expected_blocks
+        or any(block.ndim != 1 or block.size < settings.max_block_queries for block in query_blocks)
+    ):
+        raise ValueError("query_blocks must provide one sufficiently large 1-D block per warmup and repetition")
+
     runner = block_runner(algorithm)
     ops = new_counter()
     runner(data, query_pool[:1], ops)  # compile (discarded)
@@ -108,7 +122,7 @@ def time_search(
 
     samples = []
     for repetition in range(settings.warmup + settings.repetitions):
-        keys = rng.choice(query_pool, length)  # fresh, shuffled keys every repetition
+        keys = query_blocks[repetition][:length] if query_blocks is not None else rng.choice(query_pool, length)
         elapsed = _time_block(runner, data, keys, ops)
         if repetition >= settings.warmup:
             samples.append(elapsed / length)

@@ -113,7 +113,7 @@ def main() -> None:
         frame = run_configurations(configurations(args.mode), TIMING[args.mode], seed=SEED)
         save_results(frame, name, args.mode)
     plot(name, args.mode)
-    print(f"done: results/{args.mode}/{name}*")
+    print(f"done: {result_path(name, args.mode).parent / f'{name}*'}")
 
 
 if __name__ == "__main__":

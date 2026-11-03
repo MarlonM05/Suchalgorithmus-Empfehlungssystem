@@ -1,10 +1,14 @@
 """Tests for the measurement environment (milestone M3)."""
 
+from unittest.mock import Mock
+
 import numpy as np
 import pandas as pd
 import pytest
 
 from recommender.algorithms import ALGORITHMS, LIST_ALGORITHMS
+from recommender.benchmark import grid as grid_module
+from recommender.benchmark import timing as timing_module
 from recommender.benchmark import (
     Configuration,
     TimingSettings,
@@ -115,6 +119,50 @@ def test_time_call_and_sort_copy():
     assert samples.shape == (FAST.repetitions,)
     assert np.array_equal(sort_copy(data), np.sort(data))
     assert not np.array_equal(data, np.sort(data))  # input stays unchanged
+
+
+def test_time_search_reuses_query_blocks_for_paired_comparisons(monkeypatch):
+    seen = []
+
+    def runner(*args):
+        seen.append(args[1].copy())
+
+    def fake_timer(*args):
+        run, data, keys, ops = args
+        run(data, keys, ops)
+        return 100
+
+    monkeypatch.setattr(timing_module, "block_runner", Mock(return_value=runner))
+    monkeypatch.setattr(timing_module, "calibrate_block_length", Mock(return_value=3))
+    monkeypatch.setattr(timing_module, "_time_block", fake_timer)
+    blocks = [np.array([10, 11, 12, 13]), np.array([20, 21, 22, 23]), np.array([30, 31, 32, 33])]
+    settings = TimingSettings(repetitions=2, warmup=1, max_block_queries=4)
+
+    timing_module.time_search(ALGORITHMS["linear"], np.arange(10), np.array([1, 2]), settings, np.random.default_rng(0), blocks)
+
+    assert np.array_equal(seen[0], np.array([1]))
+    assert all(np.array_equal(actual, expected[:3]) for actual, expected in zip(seen[1:], blocks))
+
+
+def test_grid_measures_operations_with_exact_dataset_and_query_ids():
+    config = DatasetConfig(n=16, order="unsorted", duplicate_share=0.1, seed=7)
+    settings = TimingSettings(repetitions=1, warmup=0, min_block_ns=1, max_block_queries=8, count_queries=5)
+    features, components, operations, sampling = grid_module.measure_grid(
+        [(config, 2)], settings, seed=13, progress=False
+    )
+
+    assert features.loc[0, "dataset_id"] == 0
+    assert features.loc[0, "seed_replicate"] == 2
+    assert features.loc[0, "duplicate_count"] == 2
+    assert features.loc[0, "actual_duplicate_share"] == pytest.approx(0.125)
+    assert set(operations["access"]) == {"hits_uniform", "hits_front", "half_misses", "misses_only"}
+    assert set(operations["algorithm"]) == {"linear", "hash", "after_sort_binary_branchless"}
+    assert operations["query_count"].eq(5).all()
+    assert operations["query_id"].str.startswith("0:").all()
+    assert operations.groupby("access")["query_seed"].nunique().eq(1).all()
+    assert components[components["component"].str.startswith("q_")]["block_queries"].gt(0).all()
+    assert components[components["component"].str.startswith("q_")]["query_id"].nunique() == 4
+    assert sampling.empty
 
 
 # --- Runner ----------------------------------------------------------------------------

@@ -110,7 +110,7 @@ def main() -> None:
     plots.plot_over_size(summary, "median", "Zeit [ns]", "Analysekosten im Vergleich zu einer einzelnen Suche", result_path("analysis_cost", args.mode, ".pdf"))
     sample = run_or_load("analysis_sample", args.mode, args.plot_only, lambda: measure_sample(args.mode))
     plot_sample(sample, args.mode)
-    print(f"done: results/{args.mode}/analysis_*")
+    print(f"done: {result_path('analysis_cost', args.mode).parent / 'analysis_*'}")
 
 
 if __name__ == "__main__":

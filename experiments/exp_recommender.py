@@ -24,6 +24,8 @@ Outputs (results/<mode>/):
     learned_tree.json / .txt / .pdf      tree trained on all instances (used by the app)
 """
 
+import sys
+
 import numpy as np
 import pandas as pd
 from sklearn.tree import export_text, plot_tree
@@ -121,6 +123,8 @@ def export_tree(calibration: pd.DataFrame, mode: str) -> None:
 
 def main() -> None:
     args = parse_args(__doc__.splitlines()[0])
+    if hasattr(sys.stdout, "reconfigure"):
+        sys.stdout.reconfigure(encoding="utf-8", errors="backslashreplace")
     features = load_results("grid_features", args.mode)
     components = load_results("grid_components", args.mode)
     sampling = load_results("grid_sampling", args.mode)
@@ -174,7 +178,7 @@ def main() -> None:
     pd.set_option("display.width", 250)
     columns = ["Bereich", "Analysekosten", "Selektor", "Trefferquote", "≤ 1.1× Optimum", "Slowdown geom. Mittel", "Slowdown 95 %", "Lücke geschlossen (geom.)"]
     print(summary[summary["Bereich"] == "alle"][columns].round(3).to_string(index=False))
-    print(f"done: results/{args.mode}/recommender_* and learned_tree.*")
+    print(f"done: {result_path('recommender_summary', args.mode).parent / 'recommender_*'} and learned_tree.*")
 
 
 if __name__ == "__main__":

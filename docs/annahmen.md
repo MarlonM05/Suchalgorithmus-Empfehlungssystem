@@ -201,12 +201,20 @@ entspricht den Kosten, die das Tool tatsächlich hat, überwiegt aber bei sehr
 kleinem n.
 
 ### A22: Amortisationsrechnung
-Die Gesamtkosten T(q) = Vorverarbeitung + q · Kosten pro Anfrage werden aus
-getrennt gemessenen Komponenten berechnet (lineares Kostenmodell), nicht als
-Gesamtlauf gemessen. Wechselwirkungen (z. B. Cache-Zustand nach dem Sortieren)
-sind nicht berücksichtigt. Die Break-even-Punkte werden aus den Medianen
+Die Gesamtkosten T(q) = tatsächlich nötige Analyse-/Prüfungskosten +
+Vorverarbeitung + q · Kosten pro Anfrage werden aus getrennt gemessenen
+Komponenten des gemeinsamen Grids berechnet. In der Amortisationsreihe sind
+die Eingaben per Versuchsaufbau unsortiert; lineare Suche, Sortieren + binäre
+Suche und Hash-Aufbau benötigen daher keine Sortiertheitsprüfung. Deren Zeit
+wird im Grid separat gespeichert, aber nicht pauschal diesen Strategien
+zugeschlagen. Die Amortisationsauswertung verwendet nur
+Datensätze und Anfragenprofile, die exakt zum Grid passen. Für ausgewählte
+Größen und Anfragezahlen werden zusätzlich vollständige Läufe mit Analyse,
+erforderlicher Vorbereitung und Suche gemessen. Diese prüfen das additive Modell,
+ersetzen aber keine Messungen für alle q. Wechselwirkungen (z. B. Cache-Zustand
+nach dem Sortieren) bleiben möglich. Break-even-Punkte werden aus Medianen
 berechnet und haben kein eigenes Konfidenzintervall. Sortiert wird mit dem
-Numba-kompilierten `np.sort`, gesucht mit der klassischen binären Suche.
+Numba-kompilierten `np.sort`, gesucht mit verzweigungsfreier binärer Suche.
 
 ### A23: Versuchsplan „ein Faktor zur Zeit“
 Jedes Experiment variiert ein Merkmal und hält die anderen auf einer Basis
@@ -224,15 +232,36 @@ Größenstufen beeinflusst damit das Mittel.
 ## M4 – Empfehlungssystem
 
 ### A25: Messraster
-Für Training und Bewertung wird jede Kombination gemessen aus Datengröße
-(10, 10², …, 10⁶), fünf Verteilungen, drei Sortiergraden, drei
-Duplikatanteilen (0 %, 10 %, 50 %) und zwei Speicherstrukturen, also 540
-Datenmengen, jeweils mit drei Zugriffsmustern (Treffer gleichverteilt, Treffer
-vorne gehäuft, 50 % Fehlschläge). n = 10⁷ fehlt aus Zeit- und
-Speichergründen. Pro Messpunkt gibt es 10 statt 30 Wiederholungen, weil die
-beste Strategie meist deutlich vorne liegt. Die Anzahl der Anfragen q (1 bis
-10⁶) wird nicht gemessen, sondern über das lineare Kostenmodell (A22)
-eingerechnet.
+Für Training und Bewertung wird ein breites Raster aus neun Größen
+(10, 16, 30, 32, 100, 10³, 10⁴, 10⁵, 10⁶), fünf Verteilungen, drei
+Sortiergraden, drei Duplikatanteilen (0 %, 10 %, 50 %) und zwei
+Speicherstrukturen gemessen. Vier ausgewählte Fälle mit n = 1000 werden mit
+drei unabhängigen Seeds statt einem wiederholt; damit entstehen 818
+Datensätze. Quick misst ein kleineres Raster. Vier Zugriffsmuster (Treffer
+gleichverteilt, Treffer vorne gehäuft,
+50 % Fehlschläge, nur Fehlschläge) erhalten je Datensatz eine feste,
+reproduzierbare Anfragefolge. Für Algorithmen eines Vergleichs werden dieselben
+Anfrageblöcke pro Wiederholung verwendet. Exakte Duplikatanzahl und -anteil
+werden neben dem angeforderten Anteil gespeichert. Schlüsselvergleiche und
+Zugriffe werden separat über dieselben ersten Anfragen gezählt. n = 10⁷ fehlt
+im Grid aus Zeit- und Speichergründen. Die Anfragezahl q wird nicht für alle
+Werte ausgeführt, sondern über das lineare Kostenmodell (A22) abgeleitet;
+ausgewählte vollständige Läufe validieren das Modell. Die zusätzliche Breite
+erhöht die Messdauer gegenüber dem früheren 540-Punkte-Raster.
+
+### A41: Replikate und Vergleichbarkeit
+Ein Seed pro Konfiguration liefert eine breite Übersicht, aber keine
+Unsicherheitsabschätzung über Datensätze. Vier Fälle (sortiert/unsortiert mit
+0 %/50 % Duplikaten, jeweils gleichverteilt, Array, n = 1000) werden deshalb
+mit drei unabhängigen Seeds gemessen. Timing-Wiederholungen bleiben davon
+getrennt und verwenden innerhalb des Grids pro Algorithmus dieselben
+Queryblöcke. Zeitmessungen anderer Rechner werden nicht zusammengefasst;
+hardwareunabhängig gezählte Vergleiche und Zugriffe sind keine direkten
+Laufzeitprognosen. Die Amortisationsauswertung verwendet alle Seeds der
+ausgewählten Grid-Konfigurationen. Für Konfigurationen mit mehreren Seeds
+weist `amortization_summary.csv` die Anzahl der Seeds sowie Minimum, Median
+und Maximum der Break-even-Anfragen aus; die vollständigen Validierungsläufe
+enthalten ebenfalls jeden ausgewählten Seed.
 
 ### A26: Strategieraum
 Empfohlen werden Strategien, also Suchverfahren samt Vorverarbeitung:

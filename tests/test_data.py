@@ -90,6 +90,12 @@ def test_duplicate_share_is_exact(distribution, share):
     assert (n - np.unique(keys).size) / n == pytest.approx(share)
 
 
+def test_actual_duplicate_share_reflects_rounding_for_small_datasets():
+    keys = generate_keys(DatasetConfig(n=16, duplicate_share=0.1))
+    assert 16 - np.unique(keys).size == 2
+    assert (16 - np.unique(keys).size) / 16 == pytest.approx(0.125)
+
+
 def test_distribution_shapes():
     def ks(distribution):
         return ks_distance_to_uniform(generate_keys(DatasetConfig(n=10_000, distribution=distribution)))
