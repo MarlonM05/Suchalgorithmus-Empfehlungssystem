@@ -158,12 +158,49 @@ def test_amortization_fails_when_exact_grid_component_is_missing():
 
 
 def test_amortization_explains_when_grid_schema_is_stale():
-    legacy_features = pd.DataFrame(
-        columns=["dataset_id", "seed", "n", "distribution", "order", "duplicate_share", "structure"]
-    )
+    broken_features = pd.DataFrame(columns=["dataset_id", "n", "distribution", "order", "duplicate_share", "structure"])
 
     with pytest.raises(ValueError, match="regenerate them"):
-        _grid_scenarios(legacy_features, "full")
+        _grid_scenarios(broken_features, "full")
+
+
+def test_amortization_accepts_the_legacy_grid_schema():
+    """results/full (Apple M5) has one seed per configuration and no query ids."""
+    features = pd.DataFrame(
+        [
+            {
+                "dataset_id": 12,
+                "n": 1_000,
+                "distribution": "uniform",
+                "order": "unsorted",
+                "duplicate_share": 0.0,
+                "structure": "array",
+                "seed": 42,
+                "analysis_ns": 30.0,
+                "swap_fraction": 0.01,
+            }
+        ]
+    )
+    components = pd.DataFrame(
+        [
+            {"dataset_id": 12, "access": access, "component": component, "ns": value}
+            for access, component, value in [
+                ("prep", "verify", 10.0),
+                ("prep", "sort", 100.0),
+                ("prep", "hash_build", 50.0),
+                ("hits_uniform", "q_linear", 20.0),
+                ("hits_uniform", "q_after_sort_binary_branchless", 5.0),
+                ("hits_uniform", "q_hash", 2.0),
+            ]
+        ]
+    )
+
+    summary = summarize_grid(features, components, "quick")
+
+    assert summary.loc[0, "seed_replicate"] == 0
+    assert summary.loc[0, "seed_count"] == 1
+    assert summary.loc[0, "sort_break_even_q"] == pytest.approx(100 / 15)
+    assert summary.loc[0, "hash_break_even_q"] == pytest.approx(50 / 18)
 
 
 def test_amortization_summary_and_validation_include_every_seed_replicate():

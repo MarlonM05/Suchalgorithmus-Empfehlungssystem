@@ -21,7 +21,8 @@ Outputs (results/<mode>/):
     recommender_choices.csv              chosen vs. best strategy on the test half (counts)
     recommender_split.csv                which dataset belongs to which half
     recommender_slowdown.pdf             distribution of the slowdowns
-    learned_tree.json / .txt / .pdf      tree trained on all instances (used by the app)
+    learned_tree.json / .txt / .pdf      tree trained on the calibration half (the one
+                                         evaluated here and used by the app, A30/A38)
 """
 
 import sys

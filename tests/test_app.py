@@ -78,3 +78,27 @@ def test_learning_mode_steps_forward():
     forward.click().run()
     assert not app.exception
     assert any("Schritt **1**" in m.value for m in app.markdown)
+
+
+def test_learning_mode_race_view():
+    app = page_app("learning_page").run()
+    app.radio[0].set_value("Wettrennen").run()
+    assert not app.exception, app.exception
+    assert app.dataframe, "ranking table of the race is shown"
+    assert "Platz" in str(app.dataframe[0].value.columns)
+
+
+def test_recommendation_page_shows_profile_and_race():
+    app = page_app("recommendation_page").run()
+    assert not app.exception, app.exception
+    assert app.table, "profile of the recommended strategy"
+    assert any("Wettrennen" in h.value for h in app.subheader)
+
+
+def test_workload_random_miss_is_really_absent():
+    app = page_app("workload_page").run()
+    miss = next(b for b in app.button if "Fehlschlag" in b.label)
+    miss.click().run()
+    assert not app.exception
+    data = app.session_state["data"]
+    assert int(app.session_state["search_key"]) not in set(data.tolist())

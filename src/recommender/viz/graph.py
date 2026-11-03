@@ -26,12 +26,19 @@ def _escape(text: str) -> str:
     return text.replace("\\", "\\\\").replace('"', '\\"')
 
 
-def _format_value(feature: str, value: float) -> str:
-    if feature in ("is_list", "sorted_known", "looks_sorted", "position_front"):
+BINARY_FEATURES = frozenset({"is_list", "sorted_known", "looks_sorted", "position_front"})
+
+
+def format_value(feature: str, value: float) -> str:
+    """Feature value as shown to the user: ja/nein for flags, German number format otherwise."""
+    if feature in BINARY_FEATURES:
         return "ja" if value >= 0.5 else "nein"
     if abs(value) >= 1000:
         return f"{value:,.0f}".replace(",", ".")
     return f"{value:.3g}".replace(".", ",")
+
+
+_format_value = format_value  # internal alias kept for the drawing functions below
 
 
 def _wrap(text: str, width: int = 34) -> str:
@@ -157,7 +164,7 @@ def tree_dot(selector: LearnedSelector, recommendation: Recommendation | None = 
             lines.append(f'  "{key}" [label="{label}", {_node_style(key in visited, leaf=True)}];')
             continue
         name = selector.feature_names[selector.feature[node]]
-        threshold = _format_value(name, selector.threshold[node]) if name not in ("is_list", "sorted_known", "position_front") else "0,5"
+        threshold = _format_value(name, selector.threshold[node]) if name not in BINARY_FEATURES else "0,5"
         label = _wrap(f"{FEATURE_NAMES_DE.get(name, name)} ≤ {threshold}?")
         if key in steps:
             label += f"\\n\\nWert = {_format_value(name, steps[key].value)}"

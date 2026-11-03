@@ -61,13 +61,16 @@ GRID_COMPONENTS = {
 
 
 def _grid_scenarios(features: pd.DataFrame, mode: str) -> pd.DataFrame:
-    required = {"dataset_id", "seed", "seed_replicate", "n", "distribution", "order", "duplicate_share", "structure"}
+    required = {"dataset_id", "seed", "n", "distribution", "order", "duplicate_share", "structure"}
     missing = required - set(features.columns)
     if missing:
         raise ValueError(
             f"Grid features lack {sorted(missing)}; regenerate them with "
             f"`python experiments/exp_grid.py --mode {mode}`"
         )
+    if "seed_replicate" not in features.columns:
+        # Legacy grid (one seed per configuration, e.g. results/full of the Apple M5 run).
+        features = features.assign(seed_replicate=0)
     selected = features[
         (features["n"].isin(SIZES[mode]))
         & (features["distribution"] == "uniform")
@@ -83,13 +86,16 @@ def _grid_scenarios(features: pd.DataFrame, mode: str) -> pd.DataFrame:
 def summarize_grid(features: pd.DataFrame, components: pd.DataFrame, mode: str) -> pd.DataFrame:
     """Combine exact-match grid component medians into model costs."""
     scenarios = _grid_scenarios(features, mode)
-    required = {"dataset_id", "access", "component", "query_id", "query_seed", "ns"}
+    required = {"dataset_id", "access", "component", "ns"}
     missing = required - set(components.columns)
     if missing:
         raise ValueError(
             f"Grid components lack {sorted(missing)}; regenerate them with "
             f"`python experiments/exp_grid.py --mode {mode}`"
         )
+    # The legacy grid has no query_id/query_seed columns; it holds exactly one
+    # query pool per dataset and access pattern, so no further filter is needed.
+    exact_queries = {"query_id", "query_seed"} <= set(components.columns)
     rows = []
     selected_ids = set(scenarios["dataset_id"].astype(int))
     for dataset_id in selected_ids:
@@ -100,7 +106,7 @@ def summarize_grid(features: pd.DataFrame, components: pd.DataFrame, mode: str) 
                 & (components["access"] == access)
                 & (components["component"] == component)
             ]
-            if access != PREPROCESSING:
+            if access != PREPROCESSING and exact_queries:
                 matches = matches[
                     (matches["query_id"] == f"{dataset_id}:hits_uniform")
                     & (matches["query_seed"] == int(row["seed"]))

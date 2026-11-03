@@ -17,13 +17,12 @@ def _random_key(hit: bool) -> int:
         return 0
     if hit:
         return int(values[rng.integers(values.size)])
-    present = set(np.unique(values[: min(values.size, 2_000_000)]).tolist())
     lo, hi = int(values.min()), int(values.max())
-    for _ in range(1000):
-        candidate = int(rng.integers(lo, hi + 2))
-        if candidate not in present:
-            return candidate
-    return hi + 1
+    # Draw a batch of candidates from the value range and keep one that is
+    # really absent (one pass over all values, so this is exact for any n).
+    candidates = rng.integers(lo, hi + 2, 1000)
+    absent = candidates[~np.isin(candidates, values)]
+    return int(absent[0]) if absent.size else hi + 1
 
 
 def render() -> None:

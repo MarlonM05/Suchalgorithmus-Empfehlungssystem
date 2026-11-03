@@ -408,6 +408,64 @@ den Messreihen vergleichbar.
 - Der Entscheidungsweg wird standardmäßig kompakt gezeigt: nur der Weg und
   an jeder Frage die nicht gewählte Abzweigung. Der vollständige Graph ist
   zuschaltbar.
+- Das **Wettrennen** (Lernmodus und Empfehlungsseite) lässt mehrere
+  Verfahren auf demselben Array denselben Schlüssel suchen; pro Takt macht
+  jedes Verfahren einen Schritt. Ein Schritt ist ein Zwischenstand der
+  Schrittfolge aus `recommender.viz.stepper`, nicht exakt ein
+  Schlüsselvergleich (die Interpolationssuche braucht z. B. einen Schritt für
+  das Umschalten des Guards ohne Vergleich). Die exakten Vergleiche und
+  Zugriffe der kompilierten Zählvariante stehen deshalb in der Tabelle unter
+  dem Rennen. Die verzweigungsfreie binäre Suche wird durch die klassische
+  binäre Suche vertreten (gleiche Anzahl Prüfpositionen, andere
+  Prüfreihenfolge); der Hash-Lookup ist nicht darstellbar, weil seine
+  Tabelle kein geordnetes Array ist. Auf der Empfehlungsseite besteht das
+  Rennen aus 24 zufällig gezogenen, sortierten und auf 0–999 skalierten
+  Werten der aktuellen Datenmenge, gesucht wird ein vorhandener Wert.
+
+### A39: Zwei Messpipelines für die Amortisation und Messungen anderer Rechner
+Die Amortisation (A22) wurde zweimal umgesetzt:
+
+1. **Eigenständige Messung (M3)**: `exp_amortization.py` maß die fünf
+   Komponenten selbst (lineare Suche, klassische binäre Suche nach dem
+   Sortieren, Hash-Lookup, Sortieren, Hash-Aufbau), auf dem Messlaptop für
+   n = 10³ … 10⁷. Die Ergebnisse liegen in `results/full/amortization.csv`
+   und `amortization_break_even.csv`; alle Zahlen in Bericht, Regelwerk
+   (Kopf von `rules.yaml`) und Präsentation („7 bis 34 Durchläufe“,
+   „Break-even bei 14 bis 68 Anfragen“, „64 bis 407 Anfragen für Sortieren +
+   binäre Suche“) stammen daraus.
+2. **Ableitung aus dem Messraster** (Umbau der Messmethodik, November 2026):
+   `exp_amortization.py` liest die Komponenten aus `grid_components.csv`
+   (nur exakt passende Datensätze: gleichverteilt, unsortiert, keine
+   Duplikate, Array), rechnet die Analysekosten in T(q) ein, verwendet die
+   verzweigungsfreie binäre Suche nach dem Sortieren und misst zusätzlich
+   vollständige Läufe zur Prüfung des additiven Kostenmodells. n = 10⁷ fehlt,
+   weil das Raster dort endet.
+
+Beide Pipelines liefern auf den Daten des Messlaptops dieselben
+Größenordnungen: Aus dem Raster ergeben sich Break-even-Punkte von 57 bis
+387 Anfragen (Sortieren + binäre Suche) und 12 bis 44 Anfragen (Hashtabelle)
+für n = 10³ … 10⁶, aus der eigenständigen Messung 64 bis 387 bzw. 14 bis 46.
+Die Analysekosten verschieben alle drei Kurven gleich und ändern die
+Break-even-Punkte nicht. Das Skript akzeptiert auch das ältere Rasterformat
+ohne `seed_replicate`/`query_id` (die M5-Daten in `results/full/`).
+
+`results/full_y/` und `results/full_y2/` sind zwei vollständige Läufe der
+erweiterten Methodik auf einem Intel Core Ultra 5 245KF unter Windows (Git-
+Stand und Stromversorgung nicht protokolliert). Sie zeigen, dass die
+Schwellen des Regelwerks hardwareabhängig sind: Dort trifft das Regelwerk
+nur in 74 % der Fälle die beste Strategie (Messlaptop: 87 %), weil seine
+Schwellen auf den Messlaptop kalibriert wurden, und die Interpolationssuche
+ist bei gleichverteilten Daten mit n = 10⁶ schneller als die verzweigungsfreie
+binäre Suche (77 gegenüber 124 ns), während sie auf dem Messlaptop in keiner
+Messung gewinnt (43 gegenüber 25 ns). Die beiden Intel-Läufe unterscheiden
+sich zudem untereinander deutlich (Break-even Sortieren + binäre Suche bei
+n = 10³: 90 gegenüber 176 Anfragen), also mehr als die Datensatzvarianz des
+Messlaptops (A40). Für absolute Zeiten gilt deshalb weiterhin nur der
+Messlaptop (A18); die Intel-Läufe dienen dem Vergleich von Verhältnissen und
+als Beleg für die Grenzen der Übertragbarkeit. Die vollständigen Läufe der
+Validierung zeigen, dass das additive Modell bei n = 10⁵ auf ±10 % bis
++40 % genau ist, bei n = 10³ und q = 1 die tatsächliche Zeit aber um bis zum
+Faktor 2 unterschätzt (Aufruf-Overhead je Schritt, vgl. A21).
 
 ## Ergänzung: Robustheit gegenüber dem Datensatz
 

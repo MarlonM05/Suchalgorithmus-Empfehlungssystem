@@ -27,9 +27,14 @@ Die App öffnet sich im Browser und führt in sechs Schritten durch das Tool:
 1. **Daten**: Datenmenge erzeugen oder CSV hochladen
 2. **Zugriffsmuster**: Suchschlüssel, Anzahl Anfragen, Trefferquote, Zielposition, Sortiergarantie
 3. **Analyse**: geschätzte Merkmale samt Analysekosten, vollständige Sortierprüfung
-4. **Empfehlung**: Strategie mit Begründung und Entscheidungsweg als Graph (Regelwerk oder gelernter Baum)
+4. **Empfehlung**: Strategie mit Begründung, Steckbrief (Komplexität, Vorverarbeitung,
+   Voraussetzung, Quellen), Entscheidungsweg als Graph (Regelwerk oder gelernter Baum)
+   und ein animiertes **Wettrennen** der linearen Suche gegen das empfohlene Verfahren
+   auf einem Ausschnitt der eigenen Daten
 5. **Ausführung**: automatische Suche mit Laufzeit und Operationen, Vergleich aller Verfahren
-6. **Lernmodus**: Suchverfahren Schritt für Schritt auf kleinen Arrays
+6. **Lernmodus**: Suchverfahren Schritt für Schritt auf kleinen Arrays oder als
+   **Wettrennen** mehrerer Verfahren nebeneinander (gleiches Array, gleicher Schlüssel,
+   ein Vergleich pro Takt, Schrittzähler je Verfahren)
 
 ## Tests
 
@@ -47,7 +52,7 @@ pytest
 | `jump` | Sprungsuche | sortiert | O(√n) | [shneiderman1978] |
 | `exponential` | Exponentielle Suche | sortiert | O(log i) | [bentley1976] |
 | `fibonacci` | Fibonacci-Suche | sortiert | O(log n) | [ferguson1960] |
-| `interpolation` | Interpolationssuche mit Guard | sortiert, numerisch | O(log log n) erwartet | [peterson1957], [vansandt2019] |
+| `interpolation` | Interpolationssuche mit Guard | sortiert, numerisch | O(log log n) erwartet, O(n) im Worst Case | [peterson1957], [perl1978], [gonnet1980], [vansandt2019] |
 | `hash` | Hash-Lookup | Hashtabelle (Aufbau O(n)) | O(1) erwartet | [richter2015] |
 
 Auf verketteten Listen gibt es zusätzlich `list_linear` und `list_jump`
@@ -92,7 +97,17 @@ Das Grid muss daher vor `exp_amortization.py` vorliegen;
 
 Ergebnisse landen standardmäßig in `results/quick/` bzw. `results/full/`;
 mit `--results-dir` lässt sich für einen Lauf ein abweichender Ausgabeordner
-festlegen. Vor der
+festlegen. Die Ordner im Repository:
+
+| Ordner | Rechner | Inhalt |
+|---|---|---|
+| `results/full/` | Messlaptop (Apple M5, macOS) | Messreihe M3 und Messraster M4 (540 Datenmengen); **Grundlage aller Zahlen in Bericht und Präsentation** (Annahme A18) |
+| `results/full_y/`, `results/full_y2/` | Intel Core Ultra 5 245KF (Windows) | zwei vollständige Läufe mit der erweiterten Messmethodik (Raster mit 818 Datenmengen, vier Zugriffsmuster, Replikate, Amortisation aus dem Raster); dienen dem Vergleich von Verhältnissen zwischen Rechnern, nicht für absolute Zeiten (A39, A41) |
+
+Das alte `results/full/amortization.csv` stammt noch aus der eigenständigen
+Amortisationsmessung (Stand vor `exp_grid`-Umbau) und bleibt als Messartefakt
+erhalten; `exp_amortization.py` liest seit dem Umbau das Raster und kommt auch
+mit dem älteren Rasterformat in `results/full/` zurecht (A39). Vor der
 vollständigen Messreihe: Netzteil anschließen, **Stromsparmodus ausschalten**
 (Systemeinstellungen → Batterie → Stromsparmodus „Nie“), andere Programme
 schließen, den Rechner während der Messung nicht benutzen. Im Stromsparmodus
@@ -115,6 +130,13 @@ pmset -g | grep lowpowermode    # muss "lowpowermode 0" zeigen
 | `exp_size_datasets.py` | Datengröße (Robustheit) | wie `exp_size.py`, aber 5 Datensätze pro Größe; zeigt, ob Ergebnisse vom Datensatz abhängen (nicht in `run_all.py`, Rechnername über `--label`) |
 | `exp_grid.py` | alle Merkmale kombiniert | Messraster für das Empfehlungssystem (nur CSV) |
 | `exp_recommender.py` | – | Bewertung von Regelwerk und Entscheidungsbaum, Tabellen (CSV, LaTeX) |
+
+## Dokumentation für Bericht und Präsentation
+
+[docs/review_und_lernmaterial.md](docs/review_und_lernmaterial.md) enthält
+eine vollständige Durchsicht des Repositorys (Aufbau, Befunde, Änderungen),
+den Abgleich der Präsentationszahlen mit den Messdaten, die Zuordnung der
+Quellen zu den Aussagen und Lernmaterial zu allen Konzepten des Projekts.
 
 ## Empfehlungssystem
 
