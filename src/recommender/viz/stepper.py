@@ -89,20 +89,21 @@ def binary_steps(arr, key) -> list[Step]:
 def jump_steps(arr, key) -> list[Step]:
     n = len(arr)
     step = max(1, math.isqrt(n))
+    block_ends = tuple(range(step - 1, n, step))  # highlighted in the learning mode
     steps = []
     block_start, block_end = 0, min(step, n)
     while block_end < n:
         if arr[block_end - 1] >= key:
-            steps.append(Step(block_start, block_end, block_end - 1, f"Blockende a[{block_end - 1}] = {arr[block_end - 1]} ≥ {key}: der Schlüssel liegt in diesem Block ({block_start}–{block_end - 1})."))
+            steps.append(Step(block_start, block_end, block_end - 1, f"Blockende a[{block_end - 1}] = {arr[block_end - 1]} ≥ {key}: der Schlüssel liegt in diesem Block ({block_start}–{block_end - 1}).", marks=block_ends))
             break
-        steps.append(Step(block_end, n, block_end - 1, f"Blockende a[{block_end - 1}] = {arr[block_end - 1]} < {key}: Sprung um {step} Elemente."))
+        steps.append(Step(block_end, n, block_end - 1, f"Blockende a[{block_end - 1}] = {arr[block_end - 1]} < {key}: Sprung um {step} Elemente.", marks=block_ends))
         block_start, block_end = block_end, min(block_end + step, n)
     i = block_start
     while i < block_end:
         if arr[i] >= key:
-            steps.append(Step(i, block_end, i, f"Im Block: a[{i}] = {arr[i]} ≥ {key}: erster Kandidat gefunden."))
+            steps.append(Step(i, block_end, i, f"Im Block: a[{i}] = {arr[i]} ≥ {key}: erster Kandidat gefunden.", marks=block_ends))
             break
-        steps.append(Step(i + 1, block_end, i, f"Im Block: a[{i}] = {arr[i]} < {key}: weiter."))
+        steps.append(Step(i + 1, block_end, i, f"Im Block: a[{i}] = {arr[i]} < {key}: weiter.", marks=block_ends))
         i += 1
     steps.append(_check(arr, key, i, i, block_end))
     return steps

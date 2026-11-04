@@ -5,7 +5,7 @@ import numpy as np
 import pytest
 
 from recommender.algorithms import ALGORITHMS, as_search_array
-from recommender.data import DatasetConfig, build_linked_list, generate_dataset, generate_keys, linked_list_to_array
+from recommender.data import DatasetConfig, generate_dataset, generate_keys, linked_list_to_array
 from recommender.executor import applicable_strategies, compare_all, execute
 from recommender.features import extract_features
 from recommender.rules import RuleBook, Workload, selection_features

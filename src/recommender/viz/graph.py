@@ -13,6 +13,7 @@ from ..rules.decision import FEATURE_NAMES_DE, Recommendation
 from ..rules.learned import LearnedSelector
 from ..rules.rulebook import RuleBook
 from ..rules.strategies import STRATEGIES
+from .formatting import german
 
 ACTIVE = "#2a78d6"  # blue: the active path
 ACTIVE_FILL = "#e3eefb"
@@ -29,9 +30,7 @@ def _escape(text: str) -> str:
 def _format_value(feature: str, value: float) -> str:
     if feature in ("is_list", "sorted_known", "looks_sorted", "position_front"):
         return "ja" if value >= 0.5 else "nein"
-    if abs(value) >= 1000:
-        return f"{value:,.0f}".replace(",", ".")
-    return f"{value:.3g}".replace(".", ",")
+    return german(value)
 
 
 def _wrap(text: str, width: int = 34) -> str:
