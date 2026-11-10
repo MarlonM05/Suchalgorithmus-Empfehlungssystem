@@ -51,9 +51,9 @@ Zugriffsmuster.
 | 1 | **Daten** | Datenmenge erzeugen (Größe bis 10⁷, Verteilung, Sortiergrad, Duplikate, Array oder verkettete Liste) oder CSV hochladen. Histogramm und Diagramm „Wert über Position“ zeigen die Daten. |
 | 2 | **Zugriffsmuster** | Suchschlüssel wählen (zufälliger Treffer oder Fehlschlag), Anzahl Anfragen, Trefferquote, Lage der Treffer, Sortiergarantie. Die App warnt, wenn die Sortierung garantiert wird, die Daten aber unsortiert sind. |
 | 3 | **Analyse** | Merkmale per Stichprobe schätzen (Unordnung, Duplikate, KS-Abstand zur Gleichverteilung) samt Analysekosten, Verteilungsdiagramm, Bedeutung für die Verfahren, vollständige Sortierprüfung. |
-| 4 | **Empfehlung** | Empfohlene Strategie mit Begründung, Komplexität und Quellen; Entscheidungsweg als Graph (Regelwerk oder gelernter Entscheidungsbaum), Vergleich beider Selektoren, Export als DOT-Datei. |
+| 4 | **Empfehlung** | Empfohlene Strategie mit Begründung, Komplexität und Quellen; Entscheidungsweg als Graph (Regelwerk oder gelernter Entscheidungsbaum), Vergleich beider Selektoren, Kostenmodell mit eingesetztem q, Export als DOT-Datei und ein animiertes Wettrennen der linearen Suche gegen das empfohlene Verfahren auf einem Ausschnitt der eigenen Daten. |
 | 5 | **Ausführung** | Automatische Suche mit Ergebnis, Vergleichen, Zeiten und Gesamtkosten; jedes Ergebnis wird gegen eine unabhängige Referenz geprüft. Vergleichsmodus: alle Strategien als Tabelle und Diagramm. |
-| 6 | **Lernmodus** | Suchverfahren Schritt für Schritt auf kleinen Arrays (bis 64 Werte), mit Blockgrenzen der Sprungsuche und einem Vergleich der Schrittzahlen aller Verfahren. |
+| 6 | **Lernmodus** | Suchverfahren Schritt für Schritt auf kleinen Arrays (bis 64 Werte), mit Blockgrenzen der Sprungsuche und einem Vergleich der Schrittzahlen aller Verfahren, oder als **Wettrennen** mehrerer Verfahren nebeneinander (gleiches Array, gleicher Schlüssel, ein Vergleich pro Takt). |
 
 ![Ausführung und Vergleichsmodus](docs/bilder/ausfuehrung.png)
 
@@ -104,7 +104,7 @@ schließt 97 % der Lücke zwischen „immer dieselbe Strategie“ und dem Optimu
 | `jump` | Sprungsuche | sortiert | O(√n) | [shneiderman1978] |
 | `exponential` | Exponentielle Suche | sortiert | O(log i) | [bentley1976] |
 | `fibonacci` | Fibonacci-Suche | sortiert | O(log n) | [ferguson1960] |
-| `interpolation` | Interpolationssuche mit Guard | sortiert, numerisch | O(log log n) erwartet | [peterson1957], [vansandt2019] |
+| `interpolation` | Interpolationssuche mit Guard | sortiert, numerisch | O(log log n) erwartet, O(n) im Worst Case | [peterson1957], [perl1978], [gonnet1980], [vansandt2019] |
 | `hash` | Hash-Lookup | Hashtabelle (Aufbau O(n)) | O(1) erwartet | [richter2015] |
 
 Auf verketteten Listen gibt es zusätzlich `list_linear` und `list_jump`
@@ -211,3 +211,4 @@ CSV-Import, die Zahlenformatierung und jede Seite der Oberfläche
 - [docs/code_dokumentation.md](docs/code_dokumentation.md): Was im Code passiert, Modul für Modul, mit den wichtigsten Entwurfsentscheidungen.
 - [docs/annahmen.md](docs/annahmen.md): alle Annahmen und Grenzen (A1–A42), Grundlage für das Kapitel „Grenzen der Arbeit“.
 - [docs/aenderungen.md](docs/aenderungen.md): Änderungsprotokoll der Überarbeitung (gefundene Fehler, Verbesserungen).
+- [docs/review_und_lernmaterial.md](docs/review_und_lernmaterial.md): Durchsicht des Repositorys, Abgleich der Präsentationszahlen mit den Messdaten, Quellenzuordnung und Lernmaterial.

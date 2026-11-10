@@ -6,7 +6,7 @@
 # the learning mode, so one colour means "chosen / active" everywhere.
 
 [client]
-toolbarMode = "minimal"   # no "Deploy" button: the app runs locally
+toolbarMode = "viewer"    # no "Deploy" button or developer options (the app runs locally), but the menu with the light/dark switch stays
 
 [theme]
 baseRadius = "0.5rem"

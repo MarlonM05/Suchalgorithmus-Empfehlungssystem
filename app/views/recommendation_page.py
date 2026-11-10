@@ -1,4 +1,4 @@
-"""Page 4 – Empfehlung: recommended strategy, justification and decision path."""
+"""Page 4 – Empfehlung: recommended strategy, justification, decision path and a race."""
 
 import pandas as pd
 import streamlit as st
@@ -7,9 +7,11 @@ from recommender.rules import STRATEGIES
 from recommender.rules.decision import FEATURE_NAMES_DE
 from recommender.viz.graph import path_dot, rulebook_alternatives, rulebook_dot, tree_alternatives, tree_dot
 
-from .common import RULES, TREE, current_features, format_ns, german, learned_tree, next_step, page_header, recommend, rulebook, strategy_properties
+from .common import RULES, TREE, current_features, format_ns, german, keys_in_order, learned_tree, next_step, page_header, recommend, rulebook, strategy_properties
+from .race_view import excerpt, render_race, rescale, traceable
 
 BOOLEAN_FEATURES = ("is_list", "sorted_known", "looks_sorted", "position_front")
+RACE_SIZE = 24
 
 
 def _value(feature: str, value: float) -> str:
@@ -37,6 +39,21 @@ def _strategy_card(recommendation) -> None:
         st.caption(sample_note + (f" Quellen: {sources}" if sources else ""))
 
 
+def _cost_model(strategy_key: str, workload) -> None:
+    """The additive cost model with the user's number of queries filled in."""
+    strategy = STRATEGIES[strategy_key]
+    parts = []
+    if strategy.requires_sorted and not workload.sorted_known:
+        parts.append("Sortierprüfung")
+    if strategy.preprocessing is not None:
+        parts.append("Vorverarbeitung")
+    fixed = " + ".join(parts) if parts else "0"
+    st.markdown(
+        f"**Kostenmodell (Annahme A22):** T(q) = {fixed} + q · Zeit pro Anfrage, hier mit q = {german(workload.queries)} Anfragen. "
+        "Die gemessenen Werte dafür liefert Seite 5 (Ausführung)."
+    )
+
+
 def _second_opinion(selector: str, recommendation) -> None:
     """Compare with the other selector, so the user sees whether both agree."""
     if learned_tree() is None:
@@ -50,6 +67,37 @@ def _second_opinion(selector: str, recommendation) -> None:
             f":material/compare_arrows: Zum Vergleich: {'Der gelernte Entscheidungsbaum' if other_name == TREE else 'Das Regelwerk'} "
             f"empfiehlt „{STRATEGIES[other.strategy].name_de}“. Welche Wahl schneller ist, zeigt der Vergleichsmodus auf Seite 5."
         )
+
+
+def _race_section(strategy_key: str) -> None:
+    """Linear search against the recommended method on a small sorted excerpt of the data."""
+    st.subheader("Anschaulich: Wettrennen auf einem Ausschnitt deiner Daten")
+    values = keys_in_order(st.session_state.data)
+    if values.size == 0:
+        return
+    sample = rescale(excerpt(values, RACE_SIZE, seed=st.session_state.get("data_version", 0)))
+    n = int(sample.size)
+    competitor = traceable(strategy_key)
+    if competitor is None:
+        st.write(
+            "Der **Hash-Lookup** lässt sich nicht als Suche durch ein geordnetes Array zeigen: Nach dem Aufbau der Tabelle "
+            "berechnet er aus dem Schlüssel direkt den Slot und braucht erwartet nur einen Zugriff [richter2015]. "
+            "Zum Vergleich läuft hier die lineare gegen die binäre Suche, die Alternativen ohne Hashtabelle."
+        )
+        algorithms = ["linear", "binary"]
+    elif competitor == "linear":
+        st.write("Die Empfehlung ist die lineare Suche selbst. Zum Vergleich läuft sie hier gegen die binäre Suche, die sortierte Daten voraussetzt.")
+        algorithms = ["linear", "binary"]
+    else:
+        note = " (gezeigt wird die klassische binäre Suche; die verzweigungsfreie Variante prüft dieselbe Anzahl Positionen, nur ohne bedingten Sprung)" if strategy_key in ("binary_branchless", "sort_binary") else ""
+        st.write(f"Lineare Suche gegen das empfohlene Verfahren{note}.")
+        algorithms = ["linear", competitor]
+    st.caption(
+        f"Ausschnitt: {n} zufällig gezogene Werte deiner Daten, sortiert und auf 0–999 skaliert "
+        f"(aus n = {german(values.size)}). Gesucht wird ein vorhandener Wert; mit **▶ Start** läuft das Rennen."
+    )
+    key = int(sample[n // 3])
+    render_race(sample, key, algorithms)
 
 
 def render() -> None:
@@ -69,6 +117,7 @@ def render() -> None:
     recommendation = recommend(selector)
     _strategy_card(recommendation)
     _second_opinion(selector, recommendation)
+    _cost_model(recommendation.strategy, st.session_state.workload)
 
     st.subheader("Entscheidungsweg")
     full = st.toggle("Vollständigen Graphen zeigen", value=False, help="Alle Fragen und Empfehlungen; der Weg dieser Empfehlung bleibt blau hervorgehoben.")
@@ -96,4 +145,6 @@ def render() -> None:
     with st.expander("Entscheidungsweg als Tabelle", expanded=True, icon=":material/table:"):
         st.dataframe(pd.DataFrame(rows), hide_index=True, width="stretch")
     st.download_button("Graph als DOT-Datei (für die Ausarbeitung)", dot, file_name="entscheidungsweg.dot", mime="text/vnd.graphviz", icon=":material/download:")
+
+    _race_section(recommendation.strategy)
     next_step(4)

@@ -383,8 +383,19 @@ den Messreihen vergleichbar.
 - Der Entscheidungsweg wird standardmäßig kompakt gezeigt: nur der Weg und
   an jeder Frage die nicht gewählte Abzweigung. Der vollständige Graph ist
   zuschaltbar.
-
-## Ergänzung: Robustheit gegenüber dem Datensatz
+- Das **Wettrennen** (Lernmodus und Empfehlungsseite) lässt mehrere
+  Verfahren auf demselben Array denselben Schlüssel suchen; pro Takt macht
+  jedes Verfahren einen Schritt. Ein Schritt ist ein Zwischenstand der
+  Schrittfolge aus `recommender.viz.stepper`, nicht exakt ein
+  Schlüsselvergleich (die Interpolationssuche braucht z. B. einen Schritt für
+  das Umschalten des Guards ohne Vergleich). Die exakten Vergleiche und
+  Zugriffe der kompilierten Zählvariante stehen deshalb in der Tabelle unter
+  dem Rennen. Die verzweigungsfreie binäre Suche wird durch die klassische
+  binäre Suche vertreten (gleiche Anzahl Prüfpositionen, andere
+  Prüfreihenfolge); der Hash-Lookup ist nicht darstellbar, weil seine
+  Tabelle kein geordnetes Array ist. Auf der Empfehlungsseite besteht das
+  Rennen aus 24 zufällig gezogenen, sortierten und auf 0–999 skalierten
+  Werten der aktuellen Datenmenge, gesucht wird ein vorhandener Wert.
 
 ### A40: Ein Datensatz pro Größe reicht
 `exp_size.py` misst jede Datengröße auf einem einzigen Datensatz.

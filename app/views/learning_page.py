@@ -1,9 +1,15 @@
-"""Page 6 – Lernmodus: step through a search on a small array, one click per step.
+"""Page 6 – Lernmodus: follow a search on a small array.
 
-Visualisations help mostly when the learner is active [hundhausen2002], so
-the page does not animate by itself: every step needs a click. Below the
-array, a chart compares how many steps every algorithm needs for the same
-key, which connects the single run to the complexity classes.
+Two views:
+
+* **Schritt für Schritt**: one algorithm, one click per comparison.
+  Visualisations help mostly when the learner is active [hundhausen2002], so
+  this view does not animate by itself: every step needs a click. Below the
+  array, a chart compares how many steps every algorithm needs for the same
+  key, which connects the single run to the complexity classes.
+* **Wettrennen**: several algorithms side by side on the same array, every
+  lane advances one comparison per tick (like the popular "linear vs. binary
+  search" animations). Shows *why* one method needs fewer steps.
 """
 
 import html
@@ -13,10 +19,15 @@ import pandas as pd
 import streamlit as st
 
 from recommender.data import DISTRIBUTIONS, DatasetConfig, generate_keys
+from recommender.viz.race import DEFAULT_RACE, MAX_RACE_SIZE
 from recommender.viz.stepper import MAX_LEARNING_SIZE, TRACERS, Step, trace
 
 from . import charts
 from .common import DISTRIBUTION_LABELS, german, page_header
+from .race_view import render_race, rescale
+
+STEP_VIEW = "Schritt für Schritt"
+RACE_VIEW = "Wettrennen"
 
 # Semi-transparent colours work on the light and the dark theme alike.
 CELL_CSS = """
@@ -77,13 +88,8 @@ def _reset() -> None:
 
 
 def _example_array(n: int, distribution: str, order: str, seed: int) -> np.ndarray:
-    """Small example array; values rescaled to 0 ... 999, which are easier to follow.
-
-    The linear rescaling keeps the shape of the distribution (duplicates can arise).
-    """
-    values = generate_keys(DatasetConfig(n=n, distribution=distribution, order=order, seed=seed))
-    span = max(int(values.max()) - int(values.min()), 1)
-    return np.round((values - values.min()) / span * 999).astype(np.int64)
+    """Small example array with readable values 0 ... 999 (shape of the distribution kept, duplicates can arise)."""
+    return rescale(generate_keys(DatasetConfig(n=n, distribution=distribution, order=order, seed=seed)))
 
 
 def _step_comparison(values: np.ndarray, key: int, algorithm: str, is_sorted: bool) -> None:
@@ -101,32 +107,8 @@ def _step_comparison(values: np.ndarray, key: int, algorithm: str, is_sorted: bo
     )
 
 
-def render() -> None:
-    page_header(6, "Verfolge eine Suche Schritt für Schritt. Klicke auf **Weiter**, um den nächsten Vergleich zu sehen.")
-
-    with st.container(border=True):
-        left, right = st.columns(2)
-        with left:
-            algorithm = st.selectbox("Suchverfahren", list(TRACERS), format_func=lambda k: TRACERS[k][0], on_change=_reset)
-            n = st.slider("Größe des Beispiel-Arrays", 4, MAX_LEARNING_SIZE, 24, on_change=_reset)
-        with right:
-            distribution = st.selectbox("Verteilung der Werte", DISTRIBUTIONS, format_func=DISTRIBUTION_LABELS.get, on_change=_reset)
-            seed = int(st.number_input("Seed", min_value=0, value=3, step=1, on_change=_reset))
-        needs_sorted = TRACERS[algorithm][2]
-        order = (
-            "sorted"
-            if needs_sorted
-            else st.radio("Reihenfolge (nur lineare Suche)", ["sorted", "unsorted"], format_func={"sorted": "sortiert", "unsorted": "unsortiert"}.get, horizontal=True, on_change=_reset)
-        )
-    values = _example_array(n, distribution, order, seed)
-
-    # A new example array starts with a key that is contained in it.
-    config = (n, distribution, order, seed)
-    if st.session_state.get("lm_config") != config:
-        st.session_state.lm_config = config
-        st.session_state.lm_key = int(values[n // 2])
-        _reset()
-
+def _key_controls(values: np.ndarray, n: int) -> int:
+    """Search key input with buttons for a random hit and a random miss."""
     rng = np.random.default_rng()  # unseeded: every click draws a new key
     left, middle, right = st.columns([2, 1, 1], vertical_alignment="bottom")
     with middle:
@@ -141,7 +123,10 @@ def render() -> None:
     with left:
         key = int(st.number_input("Gesuchter Wert", value=int(st.session_state.lm_key), step=1, on_change=_reset))
         st.session_state.lm_key = key
+    return key
 
+
+def _step_view(algorithm: str, values: np.ndarray, key: int, n: int, is_sorted: bool) -> None:
     steps = trace(algorithm, values, key)
     st.session_state.setdefault("lm_step", 0)
     position = min(st.session_state.lm_step, len(steps))
@@ -175,4 +160,56 @@ def render() -> None:
                 st.markdown(f"{number}. {step.text}")
 
     st.divider()
-    _step_comparison(values, key, algorithm, order == "sorted")
+    _step_comparison(values, key, algorithm, is_sorted)
+
+
+def render() -> None:
+    page_header(6, "Verfolge eine Suche Schritt für Schritt oder lass mehrere Verfahren im Wettrennen gegeneinander antreten.")
+    view = st.radio("Ansicht", [STEP_VIEW, RACE_VIEW], horizontal=True, label_visibility="collapsed", on_change=_reset)
+    if view == STEP_VIEW:
+        st.write("Klicke auf **Weiter**, um den nächsten Vergleich zu sehen.")
+    else:
+        st.write(
+            "Mehrere Verfahren suchen **denselben Wert im selben Array**. In jedem Takt macht jedes Verfahren einen Schritt; "
+            "wer zuerst fertig ist, gewinnt. So sieht man, warum Halbieren oder Springen so viel weniger Schritte braucht als das Durchlaufen."
+        )
+
+    with st.container(border=True):
+        left, right = st.columns(2)
+        with left:
+            if view == STEP_VIEW:
+                algorithms = [st.selectbox("Suchverfahren", list(TRACERS), format_func=lambda k: TRACERS[k][0], on_change=_reset)]
+                max_size = MAX_LEARNING_SIZE
+            else:
+                algorithms = st.multiselect(
+                    "Verfahren im Rennen",
+                    list(TRACERS),
+                    default=list(DEFAULT_RACE),
+                    format_func=lambda k: TRACERS[k][0],
+                    help="Alle Verfahren außer der linearen Suche brauchen sortierte Daten; das Beispiel-Array ist deshalb sortiert.",
+                )
+                max_size = min(MAX_LEARNING_SIZE, MAX_RACE_SIZE)
+            n = st.slider("Größe des Beispiel-Arrays", 4, max_size, 24, on_change=_reset)
+        with right:
+            distribution = st.selectbox("Verteilung der Werte", DISTRIBUTIONS, format_func=DISTRIBUTION_LABELS.get, on_change=_reset)
+            seed = int(st.number_input("Seed", min_value=0, value=3, step=1, on_change=_reset))
+        needs_sorted = view == RACE_VIEW or TRACERS[algorithms[0]][2]
+        order = (
+            "sorted"
+            if needs_sorted
+            else st.radio("Reihenfolge (nur lineare Suche)", ["sorted", "unsorted"], format_func={"sorted": "sortiert", "unsorted": "unsortiert"}.get, horizontal=True, on_change=_reset)
+        )
+    values = _example_array(n, distribution, order, seed)
+
+    # A new example array starts with a key that is contained in it.
+    config = (n, distribution, order, seed)
+    if st.session_state.get("lm_config") != config:
+        st.session_state.lm_config = config
+        st.session_state.lm_key = int(values[n // 2])
+        _reset()
+
+    key = _key_controls(values, n)
+    if view == STEP_VIEW:
+        _step_view(algorithms[0], values, key, n, order == "sorted")
+    else:
+        render_race(values, key, algorithms)
