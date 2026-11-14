@@ -113,6 +113,20 @@ def execute(strategy_key: str, data: np.ndarray | LinkedList, key: int, sorted_k
     )
 
 
+def expected_index(data: np.ndarray | LinkedList, key: int) -> int:
+    """Reference answer: index of the first occurrence of ``key`` or -1.
+
+    Computed independently of all search algorithms with one vectorised NumPy
+    comparison over the data in logical order (for lists: list position). The
+    user interface uses it to mark every result as correct or wrong. A wrong
+    result is possible only if the user guaranteed sortedness for data that
+    is not sorted: then the check is skipped and binary search may miss.
+    """
+    keys = linked_list_to_array(data) if isinstance(data, LinkedList) else np.asarray(data)
+    matches = np.flatnonzero(keys == key)
+    return int(matches[0]) if matches.size else -1
+
+
 def compare_all(data: np.ndarray | LinkedList, key: int, sorted_known: bool = False) -> list[ExecutionResult]:
     """Run every applicable strategy on the same data (comparison mode)."""
     is_sorted = sorted_known or verify_sorted(data).is_sorted

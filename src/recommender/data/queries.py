@@ -70,6 +70,32 @@ def _miss_keys(sorted_unique: np.ndarray, count: int, rng: np.random.Generator) 
     return misses[:count]
 
 
+def random_hit_key(keys: np.ndarray, rng: np.random.Generator) -> int:
+    """A key that is contained in ``keys`` (0 for empty data)."""
+    if keys.size == 0:
+        return 0
+    return int(keys[rng.integers(keys.size)])
+
+
+def random_miss_key(keys: np.ndarray, rng: np.random.Generator, attempts: int = 64) -> int:
+    """A key that is **not** contained in ``keys``, preferably inside its value range.
+
+    Each candidate is checked against all keys with one vectorised comparison
+    (O(n), a few milliseconds for 10^7 keys), so the result is exact for any
+    size. If the value range has no gaps, a key just outside the range is
+    returned, which is a miss as well.
+    """
+    if keys.size == 0:
+        return 0
+    lo, hi = int(keys.min()), int(keys.max())
+    for _ in range(attempts):
+        candidate = int(rng.integers(lo, hi, endpoint=True))
+        if not np.any(keys == candidate):
+            return candidate
+    # Dense range (or very unlucky draws): a neighbour of the range is always absent.
+    return hi + 1 if hi < np.iinfo(np.int64).max else lo - 1
+
+
 def generate_queries(data: np.ndarray | LinkedList, config: QueryConfig) -> np.ndarray:
     """Generate ``config.count`` search keys for ``data`` in random order."""
     keys = linked_list_to_array(data) if isinstance(data, LinkedList) else np.asarray(data, dtype=np.int64)

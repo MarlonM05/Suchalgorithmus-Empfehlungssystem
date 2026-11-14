@@ -5,7 +5,7 @@ numba>=0.60
 pandas>=2.2
 scikit-learn>=1.5
 matplotlib>=3.9
-streamlit>=1.40
+streamlit>=1.50  # width="stretch", segmented_control, light/dark theme sections
 pyyaml>=6.0
 pytest>=8.0
 

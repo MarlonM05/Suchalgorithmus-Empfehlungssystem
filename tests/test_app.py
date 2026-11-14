@@ -77,4 +77,60 @@ def test_learning_mode_steps_forward():
     forward = next(b for b in app.button if "Weiter" in b.label)
     forward.click().run()
     assert not app.exception
-    assert any("Schritt **1**" in m.value for m in app.markdown)
+    assert "Schritt **1**" in app.progress[0].proto.text
+
+
+def test_learning_mode_new_array_starts_with_a_hit():
+    app = page_app("learning_page").run()
+    app.slider[0].set_value(40).run()  # array size: a new example array
+    assert not app.exception
+    assert app.session_state.lm_step == 0
+    assert app.session_state.lm_config[0] == 40
+    # The key of a new array is contained in it, so the first run ends with a hit.
+    next(b for b in app.button if b.label == "Zum Ende").click().run()
+    assert app.success, "the search ends with a hit"
+
+
+def test_guaranteed_but_wrong_sortedness_is_reported():
+    setup = (
+        "import streamlit as st\n"
+        "from recommender.data import DatasetConfig, generate_dataset\n"
+        "from recommender.rules import Workload\n"
+        "from views.common import set_data\n"
+        "set_data(generate_dataset(DatasetConfig(n=100_000, order='unsorted', seed=4)), 'unsortiert')\n"
+        "st.session_state.workload = Workload(queries=100, sorted_known=True)"
+    )
+    workload = page_app("workload_page", setup).run()
+    assert not workload.exception
+    assert any("nicht sortiert" in w.value for w in workload.warning)
+    execution = page_app("execution_page", setup).run()
+    assert not execution.exception
+    assert any("falsch" in e.value for e in execution.error)
+
+
+def test_execution_result_is_verified():
+    app = page_app("execution_page").run()
+    assert any("Ergebnis geprüft" in s.value for s in app.success)
+
+
+def test_learning_mode_race_view():
+    app = page_app("learning_page").run()
+    app.radio[0].set_value("Wettrennen").run()
+    assert not app.exception, app.exception
+    assert app.dataframe, "ranking table of the race is shown"
+    assert "Platz" in str(app.dataframe[0].value.columns)
+
+
+def test_recommendation_page_shows_race():
+    app = page_app("recommendation_page").run()
+    assert not app.exception, app.exception
+    assert any("Wettrennen" in h.value for h in app.subheader)
+
+
+def test_workload_random_miss_is_really_absent():
+    app = page_app("workload_page").run()
+    miss = next(b for b in app.button if "Fehlschlag" in b.label)
+    miss.click().run()
+    assert not app.exception
+    data = app.session_state["data"]
+    assert int(app.session_state["search_key"]) not in set(data.tolist())

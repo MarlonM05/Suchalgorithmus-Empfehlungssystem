@@ -88,8 +88,13 @@ class Workload:
     def __post_init__(self) -> None:
         if self.queries < 1:
             raise ValueError("at least one query is expected")
+        if not 0.0 <= self.hit_ratio <= 1.0:
+            raise ValueError("hit_ratio must lie in [0, 1]")
         if self.position not in POSITIONS:
             raise ValueError(f"unknown position {self.position!r}")
+        if not 0.0 < self.front_mean <= 1.0:
+            # linear_scans would be 0 and its logarithm undefined
+            raise ValueError("front_mean must lie in (0, 1]")
 
     @property
     def scan_fraction(self) -> float:

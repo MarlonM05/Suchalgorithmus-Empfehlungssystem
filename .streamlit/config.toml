@@ -1,0 +1,30 @@
+# Streamlit configuration of the app (read when starting from the repository root:
+#   streamlit run app/streamlit_app.py)
+#
+# Colours follow the palette of the figures (recommender/viz/plots.py): the
+# primary blue is also used for the active path in the decision graph and in
+# the learning mode, so one colour means "chosen / active" everywhere.
+
+[client]
+toolbarMode = "viewer"    # no "Deploy" button or developer options (the app runs locally), but the menu with the light/dark switch stays
+
+[theme]
+baseRadius = "0.5rem"
+
+[theme.light]
+primaryColor = "#2a78d6"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#f4f3ef"
+textColor = "#0b0b0b"
+
+[theme.dark]
+primaryColor = "#5598e7"
+backgroundColor = "#141414"
+secondaryBackgroundColor = "#232322"
+textColor = "#f4f3ef"
+
+[theme.light.sidebar]
+backgroundColor = "#f4f3ef"
+
+[theme.dark.sidebar]
+backgroundColor = "#1c1c1b"

@@ -369,7 +369,11 @@ den Messreihen vergleichbar.
 - Verkettete Listen sind auf n ≤ 10⁶ begrenzt, weil schon eine Suche auf
   längeren Listen Sekunden dauert.
 - Hochgeladene CSV-Dateien müssen eine Spalte mit ganzen Zahlen enthalten
-  (A2). Leere Zeilen werden übersprungen.
+  (A2). Eine Kopfzeile wird nur angenommen, wenn die erste Zeile nicht nur
+  aus Zahlen besteht; das Trennzeichen (`;`, `,`, Tabulator, Leerzeichen)
+  wird aus der ersten Zeile erkannt. Leere Zellen werden übersprungen,
+  Nachkommastellen, unendliche Werte und Werte außerhalb von `int64` werden
+  abgelehnt (`recommender/data/upload.py`).
 - Der Lernmodus arbeitet mit höchstens 64 Werten, die auf 0 bis 999
   skaliert werden (die Form der Verteilung bleibt erhalten, Duplikate
   können entstehen). Der Hash-Lookup ist dort nicht enthalten, weil seine
@@ -379,8 +383,19 @@ den Messreihen vergleichbar.
 - Der Entscheidungsweg wird standardmäßig kompakt gezeigt: nur der Weg und
   an jeder Frage die nicht gewählte Abzweigung. Der vollständige Graph ist
   zuschaltbar.
-
-## Ergänzung: Robustheit gegenüber dem Datensatz
+- Das **Wettrennen** (Lernmodus und Empfehlungsseite) lässt mehrere
+  Verfahren auf demselben Array denselben Schlüssel suchen; pro Takt macht
+  jedes Verfahren einen Schritt. Ein Schritt ist ein Zwischenstand der
+  Schrittfolge aus `recommender.viz.stepper`, nicht exakt ein
+  Schlüsselvergleich (die Interpolationssuche braucht z. B. einen Schritt für
+  das Umschalten des Guards ohne Vergleich). Die exakten Vergleiche und
+  Zugriffe der kompilierten Zählvariante stehen deshalb in der Tabelle unter
+  dem Rennen. Die verzweigungsfreie binäre Suche wird durch die klassische
+  binäre Suche vertreten (gleiche Anzahl Prüfpositionen, andere
+  Prüfreihenfolge); der Hash-Lookup ist nicht darstellbar, weil seine
+  Tabelle kein geordnetes Array ist. Auf der Empfehlungsseite besteht das
+  Rennen aus 24 zufällig gezogenen, sortierten und auf 0–999 skalierten
+  Werten der aktuellen Datenmenge, gesucht wird ein vorhandener Wert.
 
 ### A40: Ein Datensatz pro Größe reicht
 `exp_size.py` misst jede Datengröße auf einem einzigen Datensatz.
@@ -401,3 +416,21 @@ Auf einem anderen Rechner wurden im Schnelltest Schwankungen der binären
 Suche von 38 bis 103 ns bei n = 100 beobachtet. Auf dem Messlaptop tritt
 das nicht auf. Vermutlich lag es an der Last oder Drosselung jenes Rechners.
 Für die Arbeit gelten nur die Zeiten des Messlaptops (A18).
+
+## Ergänzung: Überarbeitung der Oberfläche
+
+### A41: Ergebnisprüfung in der App
+Die App prüft jedes Suchergebnis gegen eine unabhängige Referenz
+(`executor.expected_index`: erstes Vorkommen per NumPy-Vergleich über alle
+Daten). Die Referenz kostet O(n) und ist nicht Teil der gemessenen Zeiten.
+Ein abweichendes Ergebnis ist nur möglich, wenn der Nutzer die Sortierung
+garantiert, die Daten aber nicht sortiert sind: Dann entfällt die
+Sortierprüfung (A27) bewusst, und Verfahren für sortierte Daten können
+Werte übersehen. Die App warnt davor bereits auf der Seite „Zugriffsmuster“,
+sobald die Stichprobe eine Unordnung findet.
+
+### A42: Zufällige Fehlschläge in der App
+Ein zufälliger Fehlschlag wird im Wertebereich der Daten gezogen und gegen
+**alle** Werte geprüft (bis zu 64 Versuche, je ein vektorisierter Vergleich).
+Findet sich keine Lücke, wird der Nachbar des Wertebereichs (Maximum + 1)
+verwendet, der sicher nicht vorkommt.
