@@ -1,0 +1,46 @@
+|--- Verkettete Liste <= 0.50
+|   |--- log₁₀(erwartete Durchläufe) <= 1.59
+|   |   |--- log₁₀(n) <= 2.50
+|   |   |   |--- log₁₀(n) <= 1.75
+|   |   |   |   |--- class: linear
+|   |   |   |--- log₁₀(n) >  1.75
+|   |   |   |   |--- class: linear
+|   |   |--- log₁₀(n) >  2.50
+|   |   |   |--- Anteil falsch geordneter Paare <= 0.01
+|   |   |   |   |--- class: binary_branchless
+|   |   |   |--- Anteil falsch geordneter Paare >  0.01
+|   |   |   |   |--- class: linear
+|   |--- log₁₀(erwartete Durchläufe) >  1.59
+|   |   |--- log₁₀(n) <= 1.75
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 2.09
+|   |   |   |   |--- class: linear
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  2.09
+|   |   |   |   |--- class: linear
+|   |   |--- log₁₀(n) >  1.75
+|   |   |   |--- Anfragen pro Element (q/n) <= 0.20
+|   |   |   |   |--- class: hash
+|   |   |   |--- Anfragen pro Element (q/n) >  0.20
+|   |   |   |   |--- class: hash
+|--- Verkettete Liste >  0.50
+|   |--- log₁₀(erwartete Durchläufe) <= 1.59
+|   |   |--- log₁₀(n) <= 1.75
+|   |   |   |--- Trefferquote <= 0.25
+|   |   |   |   |--- class: list_linear
+|   |   |   |--- Trefferquote >  0.25
+|   |   |   |   |--- class: list_linear
+|   |   |--- log₁₀(n) >  1.75
+|   |   |   |--- log₁₀(erwartete Durchläufe) <= 0.59
+|   |   |   |   |--- class: list_linear
+|   |   |   |--- log₁₀(erwartete Durchläufe) >  0.59
+|   |   |   |   |--- class: list_hash
+|   |--- log₁₀(erwartete Durchläufe) >  1.59
+|   |   |--- log₁₀(n) <= 1.75
+|   |   |   |--- Treffer vorne gehäuft <= 0.50
+|   |   |   |   |--- class: list_hash
+|   |   |   |--- Treffer vorne gehäuft >  0.50
+|   |   |   |   |--- class: list_linear
+|   |   |--- log₁₀(n) >  1.75
+|   |   |   |--- Treffer vorne gehäuft <= 0.50
+|   |   |   |   |--- class: list_hash
+|   |   |   |--- Treffer vorne gehäuft >  0.50
+|   |   |   |   |--- class: list_hash
