@@ -10,7 +10,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
-from recommender.data import rescale_monotone
+from recommender.data import rescale_readable
 from recommender.viz.race import MAX_RACE_SIZE, build_lanes, race_height, race_html
 from recommender.viz.stepper import TRACERS
 
@@ -36,8 +36,12 @@ RACE_STAND_IN = {
 
 
 def rescale(values: np.ndarray) -> np.ndarray:
-    """Map the values onto about 0 ... 999: keeps order, shape and the exact duplicates (A39)."""
-    return rescale_monotone(values, 999)
+    """Readable values starting at 0 ... 999, wider only if the shape needs it (A39).
+
+    Keeps order and duplicates; skewed excerpts keep their skew, otherwise the
+    interpolation search would look better in the race than it is.
+    """
+    return rescale_readable(values, 999)
 
 
 def excerpt(values: np.ndarray, size: int, seed: int = 0) -> np.ndarray:

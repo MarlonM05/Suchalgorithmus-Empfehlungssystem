@@ -32,7 +32,7 @@ init_state()
 def test_main_app_starts():
     app = AppTest.from_file(str(APP_DIR / "streamlit_app.py"), default_timeout=TIMEOUT).run()
     assert not app.exception
-    assert app.title[0].value == "1 · Daten"
+    assert app.title[0].value == "Welches Suchverfahren passt zu meinen Daten?"  # the presentation's start page
 
 
 @pytest.mark.parametrize("page", PAGES)

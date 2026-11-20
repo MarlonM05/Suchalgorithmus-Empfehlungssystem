@@ -159,3 +159,35 @@ def rescale_monotone(keys: np.ndarray, target_max: int) -> np.ndarray:
     # s'_i = max(s_i, s'_{i-1} + 1): keeps distinct values distinct with minimal shifts
     scaled = np.maximum.accumulate(scaled - ranks) + ranks
     return scaled[inverse]
+
+
+SHAPE_TOLERANCE = 0.01  # largest allowed change of the KS distance to uniform
+SHAPE_SAMPLE = 4_000  # evenly spaced positions used to compare the shape
+
+
+def rescale_readable(keys: np.ndarray, start_max: int | None = None) -> np.ndarray:
+    """Readable keys whose distribution keeps its shape (adaptive :func:`rescale_monotone`).
+
+    Starts with the range 0 ... ``start_max`` (default 10 * n) and widens it
+    in steps of 10 until the KS distance to the uniform distribution changes
+    by at most ``SHAPE_TOLERANCE``. A fixed range is too small for strongly
+    skewed data: with 0 ... 10 * n, most lognormal values (mu = 0, sigma = 2)
+    fall onto the same few integers, are pushed apart to stay distinct and end
+    up almost uniformly spaced, so the skew disappears (A39). Uniform data
+    keeps the small range; skewed data gets as many digits as its shape needs.
+    Falls back to the original keys if no range up to 2^52 keeps the shape.
+    """
+    from ..features.extraction import ks_distance_to_uniform  # local import: features imports data
+
+    keys = np.asarray(keys, dtype=np.int64)
+    if keys.size < 2:
+        return rescale_monotone(keys, start_max or 10)
+    positions = np.linspace(0, keys.size - 1, min(keys.size, SHAPE_SAMPLE)).astype(np.int64)
+    reference = ks_distance_to_uniform(np.sort(keys)[positions])
+    target = start_max or 10 * keys.size
+    while target <= 2**52:
+        candidate = rescale_monotone(keys, target)
+        if abs(ks_distance_to_uniform(np.sort(candidate)[positions]) - reference) <= SHAPE_TOLERANCE:
+            return candidate
+        target *= 10
+    return keys.copy()

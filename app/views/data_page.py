@@ -12,7 +12,7 @@ from recommender.data import (
     generate_keys,
     numeric_columns,
     read_table,
-    rescale_monotone,
+    rescale_readable,
 )
 
 from . import charts
@@ -47,10 +47,11 @@ def _generate_form() -> None:
             structure = st.radio("Speicherstruktur", list(STRUCTURE_LABELS), format_func=STRUCTURE_LABELS.get)
             seed = st.number_input("Zufalls-Seed", min_value=0, value=1, step=1, help="Gleicher Seed und gleiche Einstellungen ergeben immer dieselben Daten.")
         small_values = st.checkbox(
-            "Werte auf einen gut lesbaren Bereich (0 … 10·n) umrechnen",
+            "Werte auf einen gut lesbaren Bereich umrechnen (ab 0 … 10·n)",
             value=True,
-            help="Der Generator streut die Werte über einen riesigen Zahlenbereich (bis 2⁵²). Die Umrechnung erhält Reihenfolge, Sortierung, "
-            "Duplikatanteil und die Form der Verteilung (Annahme A39). Die Messreihen der Arbeit verwenden die ursprünglichen Werte.",
+            help="Der Generator streut die Werte über einen riesigen Zahlenbereich (bis 2⁵²). Die Umrechnung erhält Reihenfolge, Sortierung "
+            "und Duplikatanteil. Schief verteilte Daten bekommen so viele Stellen, wie ihre Form braucht (Annahme A39). "
+            "Die Messreihen der Arbeit verwenden die ursprünglichen Werte.",
         )
         submitted = st.form_submit_button("Datenmenge erzeugen", type="primary", icon=":material/auto_awesome:")
     if not submitted:
@@ -62,7 +63,7 @@ def _generate_form() -> None:
     with st.spinner("Datenmenge wird erzeugt …"):
         keys = generate_keys(config)
         if small_values:
-            keys = rescale_monotone(keys, 10 * n)
+            keys = rescale_readable(keys)
         # same node placement as generate_dataset (seed + 1)
         data = build_linked_list(keys, np.random.default_rng(config.seed + 1)) if structure == "linked_list" else keys
     description = f"{german(n)} Werte, {DISTRIBUTION_LABELS[distribution]}, {ORDER_LABELS[order]}, {round(duplicates * 100)} % Duplikate, {_short_structure(structure)}"
