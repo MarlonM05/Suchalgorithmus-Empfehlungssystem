@@ -77,7 +77,8 @@ def test_learning_mode_steps_forward():
     forward = next(b for b in app.button if "Weiter" in b.label)
     forward.click().run()
     assert not app.exception
-    assert "Schritt **1**" in app.progress[0].proto.text
+    # app.get works in all Streamlit versions (the app.progress shortcut does not exist everywhere)
+    assert "Schritt **1**" in app.get("progress")[0].proto.text
 
 
 def test_learning_mode_new_array_starts_with_a_hit():

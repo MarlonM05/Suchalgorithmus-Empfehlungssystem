@@ -397,6 +397,24 @@ den Messreihen vergleichbar.
   Rennen aus 24 zufällig gezogenen, sortierten und auf 0–999 skalierten
   Werten der aktuellen Datenmenge, gesucht wird ein vorhandener Wert.
 
+## M6 – Feinschliff
+
+### A39: Umrechnung der Werte für die Anzeige
+Der Generator streut die Werte über einen sehr großen Bereich (bis 2⁵², A10),
+damit beim Runden keine ungewollten Duplikate entstehen. In der Oberfläche
+werden erzeugte Werte standardmäßig auf etwa 0 bis 10·n umgerechnet
+(`rescale_monotone`), im Lernmodus auf etwa 0 bis 999. Die Umrechnung ist
+linear im Wert und streng monoton auf verschiedenen Werten. Fallen zwei
+verschiedene Werte beim Runden zusammen, wird der größere um das nötige
+Minimum angehoben. Reihenfolge, Sortierung und exakter Duplikatanteil
+bleiben dadurch erhalten (getestet für alle Verteilungen und Sortiergrade),
+die Form der Verteilung näherungsweise. In dichten Bereichen schiefer
+Verteilungen verschieben sich Werte leicht, und das Maximum kann etwas über
+10·n liegen. Die Messreihen der Arbeit verwenden ausschließlich die
+ursprünglichen Werte.
+
+## Ergänzung: Robustheit gegenüber dem Datensatz
+
 ### A40: Ein Datensatz pro Größe reicht
 `exp_size.py` misst jede Datengröße auf einem einzigen Datensatz.
 `exp_size_datasets.py` wiederholt die Messung mit fünf Datensätzen pro Größe

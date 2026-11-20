@@ -10,6 +10,7 @@ import pandas as pd
 import streamlit as st
 import streamlit.components.v1 as components
 
+from recommender.data import rescale_monotone
 from recommender.viz.race import MAX_RACE_SIZE, build_lanes, race_height, race_html
 from recommender.viz.stepper import TRACERS
 
@@ -35,12 +36,8 @@ RACE_STAND_IN = {
 
 
 def rescale(values: np.ndarray) -> np.ndarray:
-    """Map the values linearly onto 0 ... 999 (keeps the order and the shape)."""
-    values = np.asarray(values, dtype=np.int64)
-    if values.size == 0:
-        return values
-    span = max(int(values.max()) - int(values.min()), 1)
-    return np.round((values - values.min()) / span * 999).astype(np.int64)
+    """Map the values onto about 0 ... 999: keeps order, shape and the exact duplicates (A39)."""
+    return rescale_monotone(values, 999)
 
 
 def excerpt(values: np.ndarray, size: int, seed: int = 0) -> np.ndarray:

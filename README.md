@@ -208,7 +208,10 @@ CSV-Import, die Zahlenformatierung und jede Seite der Oberfläche
 
 ## Weitere Dokumentation
 
+- [docs/architektur.md](docs/architektur.md): Architekturübersicht mit Diagramm nach dem Rahmen von Rice ([PDF für die Arbeit](docs/architektur.pdf), neu erzeugbar mit `python docs/architektur_diagramm.py`).
 - [docs/code_dokumentation.md](docs/code_dokumentation.md): Was im Code passiert, Modul für Modul, mit den wichtigsten Entwurfsentscheidungen.
+- [docs/quellen.md](docs/quellen.md): welche Quelle an welcher Stelle im Code verwendet wird.
+- [docs/screenshots.md](docs/screenshots.md): vorgeschlagene Screenshots für Arbeit und Präsentation mit genauen Einstellungen.
 - [docs/annahmen.md](docs/annahmen.md): alle Annahmen und Grenzen (A1–A42), Grundlage für das Kapitel „Grenzen der Arbeit“.
 - [docs/aenderungen.md](docs/aenderungen.md): Änderungsprotokoll der Überarbeitung (gefundene Fehler, Verbesserungen).
 - [docs/review_und_lernmaterial.md](docs/review_und_lernmaterial.md): Durchsicht des Repositorys, Abgleich der Präsentationszahlen mit den Messdaten, Quellenzuordnung und Lernmaterial.

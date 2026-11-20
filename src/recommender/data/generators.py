@@ -134,3 +134,28 @@ def generate_dataset(config: DatasetConfig) -> np.ndarray | LinkedList:
     if config.structure == "linked_list":
         return build_linked_list(keys, np.random.default_rng(config.seed + 1))
     return keys
+
+
+def rescale_monotone(keys: np.ndarray, target_max: int) -> np.ndarray:
+    """Map keys onto the small range 0 ... ~target_max for display, keeping their structure.
+
+    The generator spreads values over a huge range (up to 2^52, see _SCALE),
+    which is correct but hard to read in the user interface. This mapping
+
+    * is linear in the value (the shape of the distribution is kept),
+    * is strictly monotone on distinct values: order, sortedness and the
+      exact duplicate share stay the same,
+    * moves a value up by the minimum needed when rounding would merge two
+      distinct values (dense regions of skewed data); the maximum can
+      therefore exceed ``target_max`` slightly.
+    """
+    keys = np.asarray(keys, dtype=np.int64)
+    if keys.size == 0:
+        return keys.copy()
+    unique, inverse = np.unique(keys, return_inverse=True)
+    low, span = float(unique[0]), max(float(unique[-1]) - float(unique[0]), 1.0)
+    scaled = np.floor((unique.astype(np.float64) - low) / span * target_max).astype(np.int64)
+    ranks = np.arange(unique.size, dtype=np.int64)
+    # s'_i = max(s_i, s'_{i-1} + 1): keeps distinct values distinct with minimal shifts
+    scaled = np.maximum.accumulate(scaled - ranks) + ranks
+    return scaled[inverse]
