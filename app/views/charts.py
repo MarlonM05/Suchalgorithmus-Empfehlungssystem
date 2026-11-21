@@ -128,3 +128,104 @@ def step_counts(frame: pd.DataFrame) -> alt.Chart:
         )
         .properties(height=alt.Step(28))
     )
+
+
+# Axis labels in readable units: 10 ns, 1 µs, 100 ms, 10 s, ...
+TIME_LABELS = (
+    "datum.value >= 1e9 ? format(datum.value / 1e9, '~g') + ' s' : "
+    "datum.value >= 1e6 ? format(datum.value / 1e6, '~g') + ' ms' : "
+    "datum.value >= 1e3 ? format(datum.value / 1e3, '~g') + ' µs' : format(datum.value, '~g') + ' ns'"
+)
+
+
+def _powers_of_ten(low: float, high: float) -> list[float]:
+    return [10.0**e for e in range(int(np.floor(np.log10(max(low, 1e-9)))), int(np.ceil(np.log10(max(high, 1.0)))) + 1)]
+
+
+def cost_curves(frame: pd.DataFrame, queries: int, max_queries: int = 10_000_000) -> alt.LayerChart:
+    """Total cost T(q) = preparation + q * time per query of every strategy (log-log).
+
+    ``frame`` has one row per strategy with ``Strategie``, ``prep_ns``,
+    ``query_ns`` and ``empfohlen``. The recommended strategy is drawn in blue
+    on top of the alternatives (grey), every line is labelled at its right end
+    (no legend to decode), and a dashed rule marks the chosen number of queries.
+    """
+    q_values = np.unique(np.logspace(0, np.log10(max_queries), 80).round().astype(np.int64))
+    rows = []
+    for _, row in frame.iterrows():
+        for q in q_values:
+            total = float(row["prep_ns"]) + q * float(row["query_ns"])
+            rows.append({"Strategie": row["Strategie"], "q": int(q), "total": total, "Gesamtzeit": format_ns(total), "empfohlen": bool(row["empfohlen"])})
+    curves = pd.DataFrame(rows)
+    x = alt.X(
+        "q:Q",
+        scale=alt.Scale(type="log", domain=[1, max_queries]),
+        title="Anzahl Anfragen q",
+        axis=alt.Axis(values=_powers_of_ten(1, max_queries), labelExpr=GERMAN_THOUSANDS, grid=True),
+    )
+    y = alt.Y(
+        "total:Q",
+        scale=alt.Scale(type="log"),
+        title="Gesamtzeit",
+        axis=alt.Axis(values=_powers_of_ten(curves["total"].min(), curves["total"].max()), labelExpr=TIME_LABELS),
+    )
+
+    def layer(data: pd.DataFrame, colour: str, width: float) -> alt.LayerChart:
+        lines = alt.Chart(data).mark_line(color=colour, strokeWidth=width).encode(
+            x=x, y=y, detail="Strategie:N", tooltip=["Strategie", alt.Tooltip("q:Q", format=","), "Gesamtzeit"]
+        )
+        ends = data[data["q"] == data["q"].max()]
+        labels = alt.Chart(ends).mark_text(align="left", dx=8, fontSize=13, color=colour, fontWeight="bold" if width > 3 else "normal").encode(
+            x=x, y=y, text="Strategie:N"
+        )
+        return lines + labels
+
+    alternatives = layer(curves[~curves["empfohlen"]], MUTED, 2.5)
+    recommended = layer(curves[curves["empfohlen"]], HIGHLIGHT, 4.5)
+    marker = alt.Chart(pd.DataFrame({"q": [queries]})).mark_rule(color=SECOND, strokeWidth=2, strokeDash=[6, 4]).encode(x="q:Q")
+    at_q = frame.assign(q=queries, total=frame["prep_ns"] + queries * frame["query_ns"])
+    at_q["Gesamtzeit"] = [format_ns(v) for v in at_q["total"]]
+    points = (
+        alt.Chart(at_q)
+        .mark_circle(size=120, opacity=1)
+        .encode(
+            x=x,
+            y=y,
+            color=alt.condition(alt.datum.empfohlen, alt.value(HIGHLIGHT), alt.value(MUTED)),
+            tooltip=["Strategie", "Gesamtzeit"],
+        )
+    )
+    return (alternatives + recommended + marker + points).properties(height=380, padding={"right": 300})
+
+
+def mean_comparisons(frame: pd.DataFrame) -> alt.Chart:
+    """Mean number of key comparisons per search on the full data (horizontal bars).
+
+    ``frame`` needs ``Verfahren``, ``Vergleiche`` and ``empfohlen``.
+    """
+    data = frame.copy()
+    data["Rolle"] = np.where(data["empfohlen"], "empfohlen", "Alternative")
+    data["Mittel"] = [german(round(v, 1)) for v in data["Vergleiche"]]
+    # Logarithmic axis: 17 against 50.000 comparisons would otherwise leave the short bar invisible.
+    data["Basis"] = 0.8
+    high = max(float(data["Vergleiche"].max()), 10.0)
+    bars = (
+        alt.Chart(data)
+        .mark_bar()
+        .encode(
+            y=alt.Y("Verfahren:N", sort=alt.EncodingSortField("Vergleiche", order="ascending"), title=None, axis=alt.Axis(labelLimit=320, labelFontSize=13)),
+            x=alt.X(
+                "Vergleiche:Q",
+                scale=alt.Scale(type="log", domain=[0.8, high * 3]),
+                title="Vergleiche pro Suche (Mittel, logarithmisch)",
+                axis=alt.Axis(values=_powers_of_ten(1, high), labelExpr=GERMAN_THOUSANDS),
+            ),
+            x2="Basis:Q",
+            color=alt.Color("Rolle:N", scale=alt.Scale(domain=["empfohlen", "Alternative"], range=[HIGHLIGHT, MUTED]), legend=None),
+            tooltip=["Verfahren", "Mittel"],
+        )
+    )
+    text = alt.Chart(data).mark_text(align="left", dx=6, fontSize=14, fontWeight="bold").encode(
+        y=alt.Y("Verfahren:N", sort=alt.EncodingSortField("Vergleiche", order="ascending")), x="Vergleiche:Q", text="Mittel:N"
+    )
+    return (bars + text).properties(height=alt.Step(40))

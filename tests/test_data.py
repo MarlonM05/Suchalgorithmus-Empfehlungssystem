@@ -206,3 +206,53 @@ def test_queries_are_deterministic():
     keys = generate_keys(DatasetConfig(n=1000))
     config = QueryConfig(count=100, hit_ratio=0.5, seed=9)
     assert np.array_equal(generate_queries(keys, config), generate_queries(keys, config))
+
+
+# --- Rescaling for display -------------------------------------------------------------
+
+
+@pytest.mark.parametrize("distribution", DISTRIBUTIONS)
+@pytest.mark.parametrize("order", ORDERS)
+def test_rescale_keeps_order_duplicates_and_shape(distribution, order):
+    from recommender.data import rescale_monotone
+
+    keys = generate_keys(DatasetConfig(n=20_000, distribution=distribution, order=order, duplicate_share=0.1))
+    small = rescale_monotone(keys, 10 * keys.size)
+    # strictly monotone on distinct values: same order relation for every pair of neighbours
+    assert np.array_equal(np.sign(np.diff(small)), np.sign(np.diff(keys)))
+    assert np.unique(small).size == np.unique(keys).size  # exact duplicate share kept
+    assert small.min() == 0
+    assert small.max() <= 10 * keys.size + keys.size  # at most n shifts above the target
+    if distribution in ("uniform", "normal"):
+        assert abs(ks_distance_to_uniform(small) - ks_distance_to_uniform(keys)) < 0.01
+
+
+def test_rescale_edge_cases():
+    from recommender.data import rescale_monotone
+
+    assert rescale_monotone(np.empty(0, dtype=np.int64), 10).size == 0
+    assert rescale_monotone(np.array([7, 7, 7]), 10).tolist() == [0, 0, 0]
+    extremes = np.array([np.iinfo(np.int64).min, 0, np.iinfo(np.int64).max])
+    assert rescale_monotone(extremes, 100).tolist() == [0, 50, 100]
+
+
+@pytest.mark.parametrize("distribution", DISTRIBUTIONS)
+@pytest.mark.parametrize("n", [64, 10_000, 100_000])
+def test_readable_rescale_keeps_the_shape_of_every_distribution(distribution, n):
+    """A fixed range (0 ... 10*n) flattened lognormal data to an almost uniform one; the adaptive one must not."""
+    from recommender.data import rescale_readable
+
+    keys = generate_keys(DatasetConfig(n=n, distribution=distribution, order="unsorted", duplicate_share=0.1))
+    readable = rescale_readable(keys)
+    positions = np.linspace(0, n - 1, min(n, 4000)).astype(int)
+    assert abs(ks_distance_to_uniform(np.sort(readable)[positions]) - ks_distance_to_uniform(np.sort(keys)[positions])) <= 0.01
+    assert np.array_equal(np.sign(np.diff(readable)), np.sign(np.diff(keys)))  # order kept
+    assert np.unique(readable).size == np.unique(keys).size  # duplicates kept
+    assert readable.min() == 0
+
+
+def test_readable_rescale_stays_small_for_uniform_data():
+    from recommender.data import rescale_readable
+
+    keys = generate_keys(DatasetConfig(n=100_000))
+    assert rescale_readable(keys).max() <= 10 * keys.size * 1.01

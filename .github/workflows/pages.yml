@@ -1,0 +1,40 @@
+# Publishes the presentation website (site/) on GitHub Pages:
+#   https://marlonm05.github.io/Suchalgorithmus-Empfehlungssystem/
+#
+# The workflow only uploads the committed site/ folder; it does not build it.
+# site/ is built on the measurement laptop with
+#   python presentation/build_site.py
+# so the website shows times measured there, not on a shared cloud runner.
+name: Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "site/**"
+      - ".github/workflows/pages.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - id: deployment
+        uses: actions/deploy-pages@v4

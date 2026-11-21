@@ -27,7 +27,7 @@ import streamlit as st
 
 from recommender.algorithms import ALGORITHMS, LIST_ALGORITHMS
 from recommender.benchmark.experiment import RESULTS_ROOT
-from recommender.data import DatasetConfig, LinkedList, generate_dataset, linked_list_to_array
+from recommender.data import DatasetConfig, LinkedList, generate_keys, linked_list_to_array, rescale_readable
 from recommender.executor import warm_up
 from recommender.features import DEFAULT_SAMPLE_SIZE, DatasetFeatures, extract_features
 from recommender.rules import STRATEGIES, RuleBook, Workload, selection_features
@@ -66,9 +66,10 @@ STEPS = {
 }
 WORKFLOW = [1, 2, 3, 4, 5]
 
-# Filled by streamlit_app.py with the registered st.Page objects. Pages rendered
+# Filled by streamlit_app.py with the registered st.Page objects: the work steps
+# by number (1-6), the presentation pages as "start" and "story". Pages rendered
 # on their own (as in the tests) have no navigation, then no links are drawn.
-PAGES: dict[int, "st.Page"] = {}
+PAGES: dict[int | str, "st.Page"] = {}
 
 
 # --- Layout ------------------------------------------------------------------------------
@@ -152,8 +153,8 @@ def learned_tree() -> LearnedSelector | None:
 def init_state() -> None:
     """Default dataset and workload on the first visit."""
     if "data" not in st.session_state:
-        config = DatasetConfig(n=100_000, distribution="uniform", order="sorted", seed=1)
-        set_data(generate_dataset(config), "100.000 gleichverteilte Werte, sortiert, Array (Standard)")
+        keys = rescale_readable(generate_keys(DatasetConfig(n=100_000, distribution="uniform", order="sorted", seed=1)))
+        set_data(keys, "100.000 gleichverteilte Werte, sortiert, Array, Werte umgerechnet (Standard)")
     if "workload" not in st.session_state:
         st.session_state.workload = Workload(queries=100)
     st.session_state.setdefault("sample_size", DEFAULT_SAMPLE_SIZE)

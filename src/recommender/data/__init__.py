@@ -7,6 +7,8 @@ from .generators import (
     DatasetConfig,
     generate_dataset,
     generate_keys,
+    rescale_monotone,
+    rescale_readable,
 )
 from .linked_list import LinkedList, build_linked_list, linked_list_to_array
 from .queries import POSITIONS, QueryConfig, generate_queries, random_hit_key, random_miss_key
@@ -31,4 +33,6 @@ __all__ = [
     "random_hit_key",
     "random_miss_key",
     "read_table",
+    "rescale_monotone",
+    "rescale_readable",
 ]

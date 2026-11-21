@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Überblick · Suchalgorithmus-Empfehlungssystem</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+<a class="brand" href="index.html">🔎 Suchalgorithmus-Empfehlungssystem</a>
+<nav class="pills"><a class="pill" href="telefonbuch.html">📞 Telefonbuch</a><a class="pill" href="logdatei.html">📜 Logdatei</a><a class="pill" href="lager.html">📦 Lagerbestand</a><a class="pill" href="einkaufsliste.html">🛒 Einkaufsliste</a><a class="pill" href="messwerte.html">📈 Messwerte</a><a class="pill" href="playlist.html">🎵 Playlist</a></nav>
+</div></header>
+<main class="wrap">
+
+<h1>Welches Suchverfahren passt zu meinen Daten?</h1>
+<p class="lead">Linear, binär, Hashtabelle oder etwas ganz anderes? Das hängt von den Daten ab und davon,
+wie oft gesucht wird. Unser Tool schaut sich beides an und empfiehlt die passende Strategie.</p>
+<section class="chapter"><h2>So arbeitet das Tool</h2><div class="pipeline"><div class="card"><div class="icon">📦</div><h3>1 · Daten und Anfragen</h3><div class="small">Was liegt vor, und wie oft wird wonach gesucht?</div><div class="rice">Rice: Problemraum</div></div><div class="arrow">➜</div><div class="card"><div class="icon">🔍</div><h3>2 · Steckbrief</h3><div class="small">Eine kleine Stichprobe verrät: sortiert? gleichmäßig? groß?</div><div class="rice">Rice: Merkmalsraum</div></div><div class="arrow">➜</div><div class="card"><div class="icon">🧭</div><h3>3 · Entscheidung</h3><div class="small">Ein Regelwerk aus unseren Messungen wählt die Strategie.</div><div class="rice">Rice: Auswahlabbildung</div></div><div class="arrow">➜</div><div class="card"><div class="icon">🏁</div><h3>4 · Ergebnis</h3><div class="small">Die Suche läuft und wird gemessen, zum Vergleich auch alle anderen.</div><div class="rice">Rice: Leistungsmaß</div></div></div></section>
+<section class="chapter"><h2>Was es bringt</h2><div class="grid three"><div class="card"><div class="label">Richtige Wahl</div><div class="value">87 %</div><div class="verdict">Immer dieselbe Strategie: 52 %</div></div><div class="card"><div class="label">Abstand zum Optimum</div><div class="value">1,24×</div><div class="verdict">Immer dieselbe Strategie: 3,7×</div></div><div class="card"><div class="label">Lücke geschlossen</div><div class="value">84 %</div><div class="verdict">zwischen bester Einzelstrategie und Optimum</div></div></div><p class="small">Bewertet auf 11.550 Testfällen des Messrasters, die nicht zum Entwickeln der Regeln verwendet wurden, einschließlich der Kosten der Stichprobe.</p></section>
+<section class="chapter"><h2>Sechs Geschichten</h2>
+<p class="question">Jede Geschichte führt zu einer anderen Empfehlung. Klick auf eine Karte, um sie Schritt für Schritt zu erleben.</p>
+<div class="grid three"><a class="card story-card" href="telefonbuch.html"><div class="icon">📞</div><h3>Telefonbuch</h3><div class="small">Sortierte Einträge, viele Nachschläge am Tag.</div><span class="go">Geschichte ansehen →</span></a><a class="card story-card" href="logdatei.html"><div class="icon">📜</div><h3>Logdatei</h3><div class="small">Ungeordnet, aber gesucht wird fast nur das Neueste.</div><span class="go">Geschichte ansehen →</span></a><a class="card story-card" href="lager.html"><div class="icon">📦</div><h3>Lagerbestand</h3><div class="small">Ungeordnete Artikelnummern, tausende Abfragen.</div><span class="go">Geschichte ansehen →</span></a><a class="card story-card" href="einkaufsliste.html"><div class="icon">🛒</div><h3>Einkaufsliste</h3><div class="small">Zehn Einträge, ein paar Blicke darauf.</div><span class="go">Geschichte ansehen →</span></a><a class="card story-card" href="messwerte.html"><div class="icon">📈</div><h3>Messwerte</h3><div class="small">Sortiert, aber sehr ungleich verteilt.</div><span class="go">Geschichte ansehen →</span></a><a class="card story-card" href="playlist.html"><div class="icon">🎵</div><h3>Playlist</h3><div class="small">Eine verkettete Liste, nur der Reihe nach lesbar.</div><span class="go">Geschichte ansehen →</span></a></div></section>
+
+</main>
+<footer><div class="wrap">
+DHBW Ravensburg · Theoretische Informatik · <a href="https://github.com/MarlonM05/Suchalgorithmus-Empfehlungssystem">Code und Ausarbeitung auf GitHub</a><br>
+Gemessen am 2026-11-21 auf Apple M5, Code-Stand 8f0b500. Alle Zahlen wurden beim Erstellen der Seite mit dem Code des Projekts berechnet.
+Das Werkzeug zum freien Ausprobieren (eigene Daten, CSV) startet lokal mit <code>streamlit run app/streamlit_app.py</code>.
+</div></footer>
+</body>
+</html>

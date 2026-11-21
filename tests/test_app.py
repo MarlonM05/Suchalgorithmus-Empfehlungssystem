@@ -32,7 +32,7 @@ init_state()
 def test_main_app_starts():
     app = AppTest.from_file(str(APP_DIR / "streamlit_app.py"), default_timeout=TIMEOUT).run()
     assert not app.exception
-    assert app.title[0].value == "1 · Daten"
+    assert app.title[0].value == "Welches Suchverfahren passt zu meinen Daten?"  # the presentation's start page
 
 
 @pytest.mark.parametrize("page", PAGES)
@@ -77,7 +77,8 @@ def test_learning_mode_steps_forward():
     forward = next(b for b in app.button if "Weiter" in b.label)
     forward.click().run()
     assert not app.exception
-    assert "Schritt **1**" in app.progress[0].proto.text
+    # app.get works in all Streamlit versions (the app.progress shortcut does not exist everywhere)
+    assert "Schritt **1**" in app.get("progress")[0].proto.text
 
 
 def test_learning_mode_new_array_starts_with_a_hit():

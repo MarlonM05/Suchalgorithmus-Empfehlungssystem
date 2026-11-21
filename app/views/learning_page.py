@@ -88,7 +88,7 @@ def _reset() -> None:
 
 
 def _example_array(n: int, distribution: str, order: str, seed: int) -> np.ndarray:
-    """Small example array with readable values 0 ... 999 (shape of the distribution kept, duplicates can arise)."""
+    """Small example array with readable values (from 0 ... 999; order, shape and duplicates kept, A39)."""
     return rescale(generate_keys(DatasetConfig(n=n, distribution=distribution, order=order, seed=seed)))
 
 

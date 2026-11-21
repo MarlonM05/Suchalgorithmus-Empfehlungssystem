@@ -397,6 +397,34 @@ den Messreihen vergleichbar.
   Rennen aus 24 zufällig gezogenen, sortierten und auf 0–999 skalierten
   Werten der aktuellen Datenmenge, gesucht wird ein vorhandener Wert.
 
+## M6 – Feinschliff
+
+### A39: Umrechnung der Werte für die Anzeige
+Der Generator streut die Werte über einen sehr großen Bereich (bis 2⁵², A10),
+damit beim Runden keine ungewollten Duplikate entstehen. In der Oberfläche
+werden erzeugte Werte standardmäßig in einen lesbaren Bereich umgerechnet
+(`rescale_readable`), im Wettrennen und im Lernmodus ab 0 … 999. Die
+Umrechnung ist linear im Wert und streng monoton auf verschiedenen Werten.
+Fallen zwei verschiedene Werte beim Runden zusammen, wird der größere um das
+nötige Minimum angehoben. Reihenfolge, Sortierung und exakter
+Duplikatanteil bleiben dadurch immer erhalten.
+
+Der Zielbereich ist **adaptiv**: Er beginnt bei 0 … 10·n und wird in
+Zehnerschritten vergrößert, bis sich der KS-Abstand zur Gleichverteilung um
+höchstens 0,01 ändert (gemessen an 4 000 gleichmäßig verteilten Positionen).
+Ein fester Bereich 0 … 10·n reichte für stark schiefe Daten nicht: Bei der
+Lognormalverteilung (µ = 0, σ = 2) fallen dort fast alle Werte auf wenige
+ganze Zahlen, werden zum Trennen auseinandergeschoben und liegen danach fast
+gleichmäßig. Der KS-Abstand sank dadurch von 0,92 auf 0,28, und im
+Wettrennen sah die Interpolationssuche besser aus, als sie ist. Mit dem
+adaptiven Bereich erhalten gleichverteilte, normal- und exponentialverteilte
+Daten weiter 0 … 10·n, lognormale 0 … 100·n. Getestet ist das für alle
+Verteilungen und Größen von 64 bis 100 000.
+
+Die Messreihen der Arbeit verwenden ausschließlich die ursprünglichen Werte.
+
+## Ergänzung: Robustheit gegenüber dem Datensatz
+
 ### A40: Ein Datensatz pro Größe reicht
 `exp_size.py` misst jede Datengröße auf einem einzigen Datensatz.
 `exp_size_datasets.py` wiederholt die Messung mit fünf Datensätzen pro Größe
@@ -434,3 +462,32 @@ Ein zufälliger Fehlschlag wird im Wertebereich der Daten gezogen und gegen
 **alle** Werte geprüft (bis zu 64 Versuche, je ein vektorisierter Vergleich).
 Findet sich keine Lücke, wird der Nachbar des Wertebereichs (Maximum + 1)
 verwendet, der sicher nicht vorkommt.
+
+## Ergänzung: Präsentationsmodus
+
+### A43: Geschichten und ihre Zahlen
+Die sechs Geschichten des Präsentationsmodus (`app/views/stories.py`) sind
+synthetische Datenmengen mit festem Seed, die Alltagssituationen nachbilden.
+Die Situationen (Telefonbuch, Logdatei usw.) dienen der Anschauung. Die
+Daten sind keine echten Telefonbücher oder Logdateien. Jede Geschichte nennt
+die Empfehlung, zu der sie führt. Diese Behauptung wird getestet.
+
+- Alle Zeiten werden beim Öffnen einer Geschichte auf dem vorführenden
+  Rechner gemessen (wie in der Ausführung, A36) und gelten nur dort. Die
+  Kostenkurven folgen dem Kostenmodell aus A22.
+- Das Wettrennen zeigt 64 Werte der Geschichte. Auf so wenigen Werten hängt
+  das Ergebnis davon ab, welche Werte im Ausschnitt landen (bei den
+  Messwerten etwa, ob ein Ausreißer dabei ist). Neben jedem Rennen stehen
+  deshalb die gezählten Vergleiche auf allen Daten, gemittelt über 200
+  Suchen mit dem Zugriffsmuster der Geschichte. Sie sind der belastbare
+  Beleg. Der Ausschnitt verwendet einen festen Seed, also immer dieselben
+  Werte.
+- Der Suchschlüssel einer Geschichte liegt an der Position, an der das
+  Zugriffsmuster seine Treffer im Mittel findet (Mitte bzw. vordere 1 %).
+  So ist die gemessene Zeit der linearen Suche typisch für die Geschichte.
+- Die Webseite auf GitHub Pages (`presentation/build_site.py`) zeigt
+  dieselben Geschichten mit denselben Funktionen. Ihre Zeiten werden einmal
+  beim Erstellen auf dem Rechner gemessen, der das Skript ausführt, und im
+  Fuß jeder Seite mit Datum, CPU und Code-Stand angegeben. Gebaut wird sie auf
+  dem Messlaptop. GitHub Actions veröffentlicht sie nur und misst nicht neu.
+
