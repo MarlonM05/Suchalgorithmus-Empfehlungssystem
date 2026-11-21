@@ -33,6 +33,8 @@ from recommender.executor import warm_up  # noqa: E402
 from recommender.rules import STRATEGIES, RuleBook, Workload, selection_features  # noqa: E402
 from recommender.viz.formatting import german, percent  # noqa: E402
 from recommender.viz.race import build_lanes, race_height, race_html  # noqa: E402
+from recommender.benchmark.environment import read_results  # noqa: E402
+from views.common import APP_URL  # noqa: E402
 from views.start_page import PIPELINE  # noqa: E402
 from views.stories import STORIES, Story  # noqa: E402
 from views.story_page import COUNT_QUERIES, QUERY_STEPS, StoryResults, _curve_strategies, compute_story_results  # noqa: E402
@@ -69,7 +71,7 @@ def page(title: str, body: str, active: str, environment: dict) -> str:
 <body>
 <header class="topbar"><div class="wrap">
 <a class="brand" href="index.html">🔎 {TITLE}</a>
-<nav class="pills">{pills}</nav>
+<nav class="pills">{pills}<a class="pill{" active" if active == "aufbau" else ""}" href="aufbau.html">🧩 Aufbau</a><a class="pill app" href="{APP_URL}">▶ Zur App</a></nav>
 </div></header>
 <main class="wrap">
 {body}
@@ -137,8 +139,68 @@ wie oft gesucht wird. Unser Tool schaut sich beides an und empfiehlt die passend
 <section class="chapter"><h2>Sechs Geschichten</h2>
 <p class="question">Jede Geschichte führt zu einer anderen Empfehlung. Klick auf eine Karte, um sie Schritt für Schritt zu erleben.</p>
 <div class="grid three">{cards}</div></section>
+<section class="chapter"><h2>Selbst ausprobieren</h2>
+<p class="question">Die Geschichten oben sind vorbereitete Beispiele. In der App wählst du Daten und Anfragen selbst und siehst Schritt für Schritt,
+wie das Tool analysiert, entscheidet und sucht.</p>
+<p><a class="button" href="{APP_URL}">▶ Zur App</a> <a class="button secondary" href="aufbau.html">🧩 So ist es aufgebaut</a></p>
+<p class="small">Die App läuft online auf einem geteilten Server und braucht nach längerer Pause etwa eine Minute zum Aufwachen.
+Ihre Zeiten stammen von diesem Server, nicht vom Messlaptop.</p></section>
 """
     return page("Überblick", body, "", environment)
+
+
+# --- Architecture page ----------------------------------------------------------------------
+
+MODULES = [
+    ("Daten und Anfragen", "src/recommender/data/", "Erzeugt Datenmengen mit gezielten Eigenschaften (Größe, Verteilung, Sortierung, Duplikate, Array oder verkettete Liste) und Suchanfragen mit Trefferquote und Zielposition."),
+    ("Merkmalsanalyse", "src/recommender/features/", "Schätzt auf einer Stichprobe: Sind die Daten sortiert? Wie gleichmäßig sind sie verteilt? Gibt es Duplikate? Misst dabei die eigenen Kosten. Dazu eine exakte Sortierprüfung in O(n)."),
+    ("Suchverfahren", "src/recommender/algorithms/", "Acht Verfahren für Arrays und zwei für Listen, alle mit Numba kompiliert. Jedes ist einmal geschrieben und zweimal übersetzt: mit Zählern für Vergleiche und ohne Zähler für faire Zeitmessungen."),
+    ("Empfehlung", "src/recommender/rules/", "Zwei austauschbare Selektoren: das Regelwerk (Entscheidungsgraph in rules.yaml, jede Regel mit Begründung und Quelle) und ein gelernter Entscheidungsbaum. Beide liefern Strategie, Begründung und Entscheidungsweg."),
+    ("Ausführung", "src/recommender/executor.py", "Führt eine Strategie samt Vorbereitung aus (Sortierprüfung, Sortieren, Hashtabelle) und misst Zeit, Vergleiche und Zugriffe."),
+    ("Messumgebung", "src/recommender/benchmark/", "Blockmessung, verworfene Aufwärmläufe, wechselnde Eingaben, robuste Statistik (Median, Bootstrap-Konfidenzintervall) und ein Protokoll der Messumgebung in jeder Ergebnisdatei."),
+    ("Experimente", "experiments/", "Messreihen zu jedem Merkmal, das Messraster aller Kombinationen und die Bewertung der Selektoren. Ergebnisse als CSV und PDF in results/full/."),
+    ("Oberfläche", "app/", "Die Streamlit-App: Präsentation (Überblick, Geschichten), das Werkzeug in fünf Schritten und der Lernmodus."),
+]
+
+
+def architecture_page(environment: dict) -> str:
+    rows = "".join(
+        f"<tr><td><strong>{html.escape(name)}</strong><br><code>{html.escape(path)}</code></td><td>{html.escape(task)}</td></tr>" for name, path, task in MODULES
+    )
+    grid_text = ""
+    grid = ROOT / "results" / "full" / "grid_features.csv"
+    table = evaluation()
+    if grid.exists() and table is not None and "Regelwerk" in table.index:
+        datasets = len(read_results(grid)[0])
+        grid_text = (
+            f"<li><strong>Messraster:</strong> {german(datasets)} Datenmengen mit je drei Zugriffsmustern, aufgeteilt in eine Kalibrierungs- "
+            f"und eine Testhälfte. Bewertet wird nur auf der Testhälfte ({german(int(table.loc['Regelwerk', 'Instanzen']))} Fälle).</li>"
+        )
+    body = f"""
+<h1>So ist es aufgebaut</h1>
+<p class="lead">Das Tool folgt dem Rahmen der Algorithmenauswahl nach Rice: Aus den Daten und Anfragen (Problemraum) werden Merkmale bestimmt,
+eine Auswahlabbildung wählt daraus eine Strategie (Algorithmenraum), und deren Ausführung wird gemessen (Leistungsmaß).</p>
+<section class="chapter"><h2>Architektur</h2>
+<div class="card figure"><img src="assets/architektur.svg" alt="Architekturdiagramm: oben der Weg einer Empfehlung, darunter die Messungen, unten die Oberfläche"></div>
+<p class="small">Oben der Weg einer Empfehlung, darunter die Messungen, aus denen die Regeln stammen, unten die Oberfläche.</p></section>
+<section class="chapter"><h2>Die Bausteine</h2>
+<table class="modules"><thead><tr><th>Baustein</th><th>Aufgabe</th></tr></thead><tbody>{rows}</tbody></table></section>
+<section class="chapter"><h2>Wie das Regelwerk entsteht</h2>
+<ol class="steps">
+<li><strong>Messreihen:</strong> Jedes Merkmal wird einzeln variiert (Datengröße, Verteilung, Duplikate, Zugriffsmuster, Speicherstruktur), jeweils mit 30 Wiederholungen.</li>
+<li><strong>Break-even-Punkte:</strong> Aus den Messungen folgt, ab wie vielen Anfragen sich Vorbereitung lohnt, z. B. eine Hashtabelle nach etwa 7 bis 34 kompletten Durchläufen der linearen Suche.</li>
+<li><strong>Regeln:</strong> Diese Schwellen stehen mit Begründung und Quelle im Regelwerk. Kostenlose Merkmale wie Größe und Angaben zu den Anfragen werden zuerst abgefragt, die Stichprobe nur bei Bedarf.</li>
+{grid_text}
+<li><strong>Vergleich:</strong> Ein Entscheidungsbaum (scikit-learn, Tiefe 4) lernt dieselbe Aufgabe aus den Messdaten. Ohne Analysekosten sind beide gleich gut, mit Analysekosten gewinnt das Regelwerk, weil es die Stichprobe seltener braucht.</li>
+</ol></section>
+<section class="chapter"><h2>Selbst ausprobieren</h2>
+<p><a class="button" href="{APP_URL}">▶ Zur App</a> <a class="button secondary" href="{REPOSITORY}">Code auf GitHub</a></p>
+<p>Lokal mit echten Messwerten des eigenen Rechners:</p>
+<pre><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app/streamlit_app.py</code></pre></section>
+"""
+    return page("Aufbau", body, "aufbau", environment)
 
 
 # --- Story pages ----------------------------------------------------------------------------
@@ -280,7 +342,9 @@ def build(site: Path = SITE, progress: bool = True) -> None:
     for asset in ASSETS.iterdir():
         shutil.copy(asset, site / "assets" / asset.name)
     (site / ".nojekyll").write_text("")  # serve the files as they are (no Jekyll processing)
+    shutil.copy(ROOT / "docs" / "architektur.svg", site / "assets" / "architektur.svg")
     (site / "index.html").write_text(overview(environment), encoding="utf-8")
+    (site / "aufbau.html").write_text(architecture_page(environment), encoding="utf-8")
     selector = RuleBook.load()
     for key, story in STORIES.items():
         if progress:

@@ -39,6 +39,8 @@ def site(tmp_path_factory) -> Path:
 
 def test_all_pages_are_written(site):
     assert (site / "index.html").exists()
+    assert (site / "aufbau.html").exists()
+    assert (site / "assets" / "architektur.svg").exists()
     assert (site / ".nojekyll").exists()
     for key, story in STORIES.items():
         assert (site / f"{key}.html").exists()
