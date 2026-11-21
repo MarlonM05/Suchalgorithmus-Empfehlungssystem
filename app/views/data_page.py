@@ -16,9 +16,10 @@ from recommender.data import (
 )
 
 from . import charts
-from .common import DISTRIBUTION_LABELS, ORDER_LABELS, STRUCTURE_LABELS, german, keys_in_order, next_step, page_header, set_data, structure_of
+from .common import DISTRIBUTION_LABELS, MAX_DATA_SIZE, ORDER_LABELS, STRUCTURE_LABELS, german, keys_in_order, next_step, page_header, set_data, structure_of
 
-SIZES = [10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000]
+ALL_SIZES = [10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000, 300_000, 1_000_000, 3_000_000, 10_000_000]
+SIZES = [n for n in ALL_SIZES if n <= MAX_DATA_SIZE]  # online: at most 10^6 (memory of the cloud server)
 MAX_LIST_SIZE = 1_000_000  # one search on a longer list takes seconds
 PREVIEW = 15  # number of values listed below the charts
 
@@ -99,6 +100,9 @@ def _upload_form() -> None:
         st.error(str(error))
         return
     st.caption(f"Vorschau: {german(uploaded.keys.size)} Werte, beginnend mit " + ", ".join(german(int(v)) for v in uploaded.keys[:8]) + (" …" if uploaded.keys.size > 8 else ""))
+    if uploaded.keys.size > MAX_DATA_SIZE:
+        st.error(f"In der Online-Version sind höchstens {german(MAX_DATA_SIZE)} Werte möglich. Lokal geht bis zu zehnmal mehr.")
+        return
     if structure == "linked_list" and uploaded.keys.size > MAX_LIST_SIZE:
         st.error(f"Verkettete Listen sind auf n ≤ {german(MAX_LIST_SIZE)} begrenzt.")
         return

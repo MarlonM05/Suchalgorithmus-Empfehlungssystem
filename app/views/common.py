@@ -22,6 +22,9 @@ the workflow data -> access pattern -> analysis -> recommendation ->
 execution is visible everywhere.
 """
 
+import os
+from pathlib import Path
+
 import numpy as np
 import streamlit as st
 
@@ -54,6 +57,24 @@ PREPROCESSING_LABELS = {
 }
 RULES = "Regelwerk"
 TREE = "Gelernter Entscheidungsbaum"
+
+# --- Hosting -------------------------------------------------------------------------------
+# The app also runs online on Streamlit Community Cloud. That server is shared and
+# has about 1 GB of memory: a hash table for 10^7 keys alone needs more than 500 MB,
+# so the online version is limited to 10^6 keys, and its times are not those of the
+# measurement laptop. Streamlit Community Cloud mounts the repository under
+# /mount/src; the environment variable (or root-level secret) SUCHALGO_ONLINE=1/0
+# overrides the detection.
+WEBSITE_URL = "https://marlonm05.github.io/Suchalgorithmus-Empfehlungssystem/"
+APP_URL = "https://suchalgorithmus-empfehlungssystem.streamlit.app/"
+
+
+def _on_streamlit_cloud() -> bool:
+    return Path(__file__).resolve().parts[1:3] == ("mount", "src")
+
+
+ONLINE = os.environ.get("SUCHALGO_ONLINE", "1" if _on_streamlit_cloud() else "0") == "1"
+MAX_DATA_SIZE = 1_000_000 if ONLINE else 10_000_000
 
 # number -> (title, Material icon, one-line description); 1-5 are the workflow, 6 is separate
 STEPS = {
