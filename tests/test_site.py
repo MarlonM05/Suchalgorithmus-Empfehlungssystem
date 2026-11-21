@@ -66,6 +66,7 @@ def test_story_data_is_complete(site, key):
     data = json.loads(re.search(r'<script type="application/json" id="story-data">(.*?)</script>', text, re.S).group(1))
     assert len(data["points"]) > 1
     assert any(c["recommended"] for c in data["counts"])
+    assert len(data["counts"]) >= 2, "the recommendation is compared with at least one alternative"
     what_if = data["what_if"]
     assert str(what_if["default_q"]) in what_if["decisions"]
     names = {c["name"] for c in what_if["curves"]}

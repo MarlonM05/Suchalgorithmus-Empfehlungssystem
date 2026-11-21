@@ -56,10 +56,11 @@ class StoryResults:
 
 
 def _count_algorithms(story: Story, recommendation: Recommendation):
-    """Algorithms for the comparison counts: the race, the recommendation and the hash table as contrast."""
+    """Algorithms for the comparison counts: linear search as baseline, the race, the recommendation and the hash table."""
     is_list = story.dataset.structure == "linked_list"
     registry = LIST_ALGORITHMS if is_list else ALGORITHMS
-    keys = ["list_" + k if is_list else k for k in story.race]
+    baseline = "list_linear" if is_list else "linear"  # always shown: the method without any preparation
+    keys = [baseline] + ["list_" + k if is_list else k for k in story.race]
     keys.append(STRATEGIES[recommendation.strategy].search)
     if story.dataset.order != "sorted" or is_list:
         keys.append("hash")
