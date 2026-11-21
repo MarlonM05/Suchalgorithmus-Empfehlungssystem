@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aufbau · Suchalgorithmus-Empfehlungssystem</title>
+<link rel="stylesheet" href="assets/style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔎</text></svg>">
+<script src="assets/site.js" defer></script>
+</head>
+<body>
+<header class="topbar"><div class="wrap">
+<a class="brand" href="index.html">🔎 Suchalgorithmus-Empfehlungssystem</a>
+<nav class="pills"><a class="pill" href="telefonbuch.html">📞 Telefonbuch</a><a class="pill" href="logdatei.html">📜 Logdatei</a><a class="pill" href="lager.html">📦 Lagerbestand</a><a class="pill" href="einkaufsliste.html">🛒 Einkaufsliste</a><a class="pill" href="messwerte.html">📈 Messwerte</a><a class="pill" href="playlist.html">🎵 Playlist</a><a class="pill active" href="aufbau.html">🧩 Aufbau</a><a class="pill app" href="https://suchalgorithmus-empfehlungssystem.streamlit.app/">▶ Zur App</a></nav>
+</div></header>
+<main class="wrap">
+
+<h1>So ist es aufgebaut</h1>
+<p class="lead">Das Tool folgt dem Rahmen der Algorithmenauswahl nach Rice: Aus den Daten und Anfragen (Problemraum) werden Merkmale bestimmt,
+eine Auswahlabbildung wählt daraus eine Strategie (Algorithmenraum), und deren Ausführung wird gemessen (Leistungsmaß).</p>
+<section class="chapter"><h2>Architektur</h2>
+<div class="card figure"><img src="assets/architektur.svg" alt="Architekturdiagramm: oben der Weg einer Empfehlung, darunter die Messungen, unten die Oberfläche"></div>
+<p class="small">Oben der Weg einer Empfehlung, darunter die Messungen, aus denen die Regeln stammen, unten die Oberfläche.</p></section>
+<section class="chapter"><h2>Die Bausteine</h2>
+<table class="modules"><thead><tr><th>Baustein</th><th>Aufgabe</th></tr></thead><tbody><tr><td><strong>Daten und Anfragen</strong><br><code>src/recommender/data/</code></td><td>Erzeugt Datenmengen mit gezielten Eigenschaften (Größe, Verteilung, Sortierung, Duplikate, Array oder verkettete Liste) und Suchanfragen mit Trefferquote und Zielposition.</td></tr><tr><td><strong>Merkmalsanalyse</strong><br><code>src/recommender/features/</code></td><td>Schätzt auf einer Stichprobe: Sind die Daten sortiert? Wie gleichmäßig sind sie verteilt? Gibt es Duplikate? Misst dabei die eigenen Kosten. Dazu eine exakte Sortierprüfung in O(n).</td></tr><tr><td><strong>Suchverfahren</strong><br><code>src/recommender/algorithms/</code></td><td>Acht Verfahren für Arrays und zwei für Listen, alle mit Numba kompiliert. Jedes ist einmal geschrieben und zweimal übersetzt: mit Zählern für Vergleiche und ohne Zähler für faire Zeitmessungen.</td></tr><tr><td><strong>Empfehlung</strong><br><code>src/recommender/rules/</code></td><td>Zwei austauschbare Selektoren: das Regelwerk (Entscheidungsgraph in rules.yaml, jede Regel mit Begründung und Quelle) und ein gelernter Entscheidungsbaum. Beide liefern Strategie, Begründung und Entscheidungsweg.</td></tr><tr><td><strong>Ausführung</strong><br><code>src/recommender/executor.py</code></td><td>Führt eine Strategie samt Vorbereitung aus (Sortierprüfung, Sortieren, Hashtabelle) und misst Zeit, Vergleiche und Zugriffe.</td></tr><tr><td><strong>Messumgebung</strong><br><code>src/recommender/benchmark/</code></td><td>Blockmessung, verworfene Aufwärmläufe, wechselnde Eingaben, robuste Statistik (Median, Bootstrap-Konfidenzintervall) und ein Protokoll der Messumgebung in jeder Ergebnisdatei.</td></tr><tr><td><strong>Experimente</strong><br><code>experiments/</code></td><td>Messreihen zu jedem Merkmal, das Messraster aller Kombinationen und die Bewertung der Selektoren. Ergebnisse als CSV und PDF in results/full/.</td></tr><tr><td><strong>Oberfläche</strong><br><code>app/</code></td><td>Die Streamlit-App: Präsentation (Überblick, Geschichten), das Werkzeug in fünf Schritten und der Lernmodus.</td></tr></tbody></table></section>
+<section class="chapter"><h2>Wie das Regelwerk entsteht</h2>
+<ol class="steps">
+<li><strong>Messreihen:</strong> Jedes Merkmal wird einzeln variiert (Datengröße, Verteilung, Duplikate, Zugriffsmuster, Speicherstruktur), jeweils mit 30 Wiederholungen.</li>
+<li><strong>Break-even-Punkte:</strong> Aus den Messungen folgt, ab wie vielen Anfragen sich Vorbereitung lohnt, z. B. eine Hashtabelle nach etwa 7 bis 34 kompletten Durchläufen der linearen Suche.</li>
+<li><strong>Regeln:</strong> Diese Schwellen stehen mit Begründung und Quelle im Regelwerk. Kostenlose Merkmale wie Größe und Angaben zu den Anfragen werden zuerst abgefragt, die Stichprobe nur bei Bedarf.</li>
+<li><strong>Messraster:</strong> 540 Datenmengen mit je drei Zugriffsmustern, aufgeteilt in eine Kalibrierungs- und eine Testhälfte. Bewertet wird nur auf der Testhälfte (11.550 Fälle).</li>
+<li><strong>Vergleich:</strong> Ein Entscheidungsbaum (scikit-learn, Tiefe 4) lernt dieselbe Aufgabe aus den Messdaten. Ohne Analysekosten sind beide gleich gut, mit Analysekosten gewinnt das Regelwerk, weil es die Stichprobe seltener braucht.</li>
+</ol></section>
+<section class="chapter"><h2>Selbst ausprobieren</h2>
+<p><a class="button" href="https://suchalgorithmus-empfehlungssystem.streamlit.app/">▶ Zur App</a> <a class="button secondary" href="https://github.com/MarlonM05/Suchalgorithmus-Empfehlungssystem">Code auf GitHub</a></p>
+<p>Lokal mit echten Messwerten des eigenen Rechners:</p>
+<pre><code>python3 -m venv .venv &amp;&amp; source .venv/bin/activate
+pip install -r requirements.txt
+streamlit run app/streamlit_app.py</code></pre></section>
+
+</main>
+<footer><div class="wrap">
+DHBW Ravensburg · Theoretische Informatik · <a href="https://github.com/MarlonM05/Suchalgorithmus-Empfehlungssystem">Code und Ausarbeitung auf GitHub</a><br>
+Gemessen am 2026-11-21 auf Apple M5, Code-Stand 240717f. Alle Zahlen wurden beim Erstellen der Seite mit dem Code des Projekts berechnet.
+Das Werkzeug zum freien Ausprobieren (eigene Daten, CSV) startet lokal mit <code>streamlit run app/streamlit_app.py</code>.
+</div></footer>
+</body>
+</html>
