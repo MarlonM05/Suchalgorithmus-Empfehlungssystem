@@ -41,6 +41,9 @@ Aufruf der Ausführung werden alle Suchverfahren einmalig mit Numba kompiliert
 
 ## Präsentationsmodus
 
+**Online ansehen:** https://marlonm05.github.io/Suchalgorithmus-Empfehlungssystem/
+(Überblick und alle Geschichten als statische Webseite, siehe unten).
+
 Die App startet mit dem **Überblick**: die Frage des Projekts, der Ablauf des
 Tools in vier Schritten (nach dem Rahmen von Rice), die Kernergebnisse der
 Bewertung aus `results/full/` und sechs **Geschichten** als Karten.
@@ -65,6 +68,26 @@ Werkzeug übernehmen.
 
 Die Texte der Geschichten werden von `tests/test_presentation.py` gegen das
 Regelwerk geprüft.
+
+### Webseite auf GitHub Pages
+
+Überblick und Geschichten gibt es zusätzlich als statische Webseite: reines
+HTML, CSS und JavaScript ohne externe Bibliotheken, also auch offline
+nutzbar. Das Werkzeug zum freien Ausprobieren ist dort nicht enthalten.
+
+```bash
+python presentation/build_site.py    # schreibt site/, auf dem Messlaptop ausführen
+```
+
+Das Skript nutzt dieselben Berechnungen und Texte wie die App und misst die
+Zeiten auf dem Rechner, auf dem es läuft. Deshalb wird `site/` auf dem
+Messlaptop gebaut (Netzteil, Stromsparmodus aus) und committet. Der Workflow
+`.github/workflows/pages.yml` veröffentlicht den Ordner bei jedem Push auf
+`main`, ohne neu zu messen. Zum lokalen Ansehen:
+
+```bash
+python -m http.server 8600 --directory site
+```
 
 ## Bedienung der Oberfläche
 

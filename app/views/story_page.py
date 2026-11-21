@@ -27,15 +27,14 @@ from recommender.executor import ExecutionResult, compare_all
 from recommender.features import DatasetFeatures, extract_features
 from recommender.rules import STRATEGIES, Workload, selection_features
 from recommender.rules.decision import Recommendation
-from recommender.rules.decision import FEATURE_NAMES_DE
-from recommender.viz.graph import format_value, path_dot, rulebook_alternatives
+from recommender.viz.graph import path_dot, rulebook_alternatives
 
 from . import charts
-from .common import DISTRIBUTION_LABELS, ORDER_LABELS, PAGES, compiled, format_ns, german, percent, rulebook, set_data
+from .common import DISTRIBUTION_LABELS, ORDER_LABELS, PAGES, compiled, format_ns, german, rulebook, set_data
 from .race_view import excerpt, render_race, rescale
 from .stories import STORIES, Story
+from .story_texts import agreement_text, answer_parts, data_text, profile_cards
 
-BOOLEAN_FEATURES = {"is_list", "sorted_known", "looks_sorted", "position_front"}
 RACE_SIZE = 64
 COUNT_QUERIES = 200  # searches per algorithm for the comparison counts on all data
 QUERY_STEPS = [1, 3, 10, 30, 100, 300, 1_000, 3_000, 10_000, 30_000, 100_000, 1_000_000, 10_000_000]
@@ -86,14 +85,13 @@ def _counts(story: Story, data, keys: np.ndarray, recommendation: Recommendation
     return pd.DataFrame(rows)
 
 
-@st.cache_resource(show_spinner="Die Geschichte wird vorbereitet: Daten erzeugen, analysieren und alle Strategien messen …")
-def story_results(key: str) -> StoryResults:
+def compute_story_results(key: str, selector) -> StoryResults:
+    """Generate, analyse and measure one story (no Streamlit: also used by presentation/build_site.py)."""
     story = STORIES[key]
-    compiled()
     data = story.data()
     keys = linked_list_to_array(data) if isinstance(data, LinkedList) else data
     features = extract_features(data)
-    recommendation = rulebook().decide(selection_features(features, story.workload))
+    recommendation = selector.decide(selection_features(features, story.workload))
     search_key = story.search_key(keys)
     measured = tuple(compare_all(data, search_key, story.workload.sorted_known))
     if story.dataset.order == "sorted" and story.dataset.structure == "array":
@@ -102,6 +100,12 @@ def story_results(key: str) -> StoryResults:
         race_values = rescale(keys[:RACE_SIZE])  # stored order: the race shows the linear search walking through it
     race_key = int(race_values[int(story.workload.scan_fraction * (race_values.size - 1))])
     return StoryResults(data, keys, features, recommendation, search_key, measured, _counts(story, data, keys, recommendation), race_values, race_key)
+
+
+@st.cache_resource(show_spinner="Die Geschichte wird vorbereitet: Daten erzeugen, analysieren und alle Strategien messen …")
+def story_results(key: str) -> StoryResults:
+    compiled()
+    return compute_story_results(key, rulebook())
 
 
 # --- Chapters ------------------------------------------------------------------------------
@@ -130,46 +134,27 @@ def _data_chapter(story: Story, results: StoryResults) -> None:
     with left:
         st.altair_chart(charts.value_over_position(results.keys), width="stretch")
     with right:
-        sorted_text = (
-            "Die Punkte steigen von links nach rechts: **die Daten sind sortiert**."
-            if story.dataset.order == "sorted"
-            else "Die Punkte liegen kreuz und quer: **die Daten sind nicht sortiert**."
-        )
-        shape_text = {
-            "uniform": "Die Werte verteilen sich gleichmäßig über den ganzen Bereich.",
-            "lognormal": "Die meisten Werte sind klein, nur wenige sehr groß: Die Kurve bleibt lange flach und schießt am Ende hoch.",
-        }.get(story.dataset.distribution, "")
-        st.markdown(f"{sorted_text} {shape_text}")
-        if story.dataset.structure == "linked_list":
-            st.markdown("In einer **verketteten Liste** kennt jedes Element nur seinen Nachfolger. Man kommt nur Schritt für Schritt voran.")
+        for line in data_text(story):
+            st.markdown(line)
         first = ", ".join(german(int(v)) for v in results.keys[:8])
         st.caption(f"Die ersten Werte: {first} …")
 
 
 def _profile_chapter(story: Story, results: StoryResults) -> None:
     _chapter(2, "Was das Tool erkennt", "Der Steckbrief der Daten: aus einer kleinen Stichprobe geschätzt, dazu deine Angaben zu den Anfragen.")
-    features, workload = results.features, story.workload
-    size, order, shape, behaviour = st.columns(4)
-    size.metric("Größe", f"n = {german(features.n)}", border=True)
-    size.caption("✅ sehr klein: Vorbereitung lohnt kaum" if features.n <= 100 else "groß: die Wahl des Verfahrens zählt")
-    order.metric("Ordnung", f"{percent(features.disorder, 1)} falsch", border=True, help="Anteil der Nachbarpaare in falscher Reihenfolge, geschätzt auf einer Stichprobe.")
-    order.caption("✅ wirkt sortiert (wird vor der Suche geprüft)" if features.looks_sorted else "❌ nicht sortiert")
-    shape.metric("Verteilung", f"KS = {german(round(features.ks_uniform, 2))}", border=True, help="Abstand zur Gleichverteilung: 0 = ganz gleichmäßig, nahe 1 = stark schief.")
-    shape.caption("✅ gleichmäßig" if features.ks_uniform < 0.05 else ("⚠️ stark schief" if features.ks_uniform >= 0.5 else "leicht ungleichmäßig"))
-    behaviour.metric("Durchläufe linear", f"≈ {german(round(workload.linear_scans, 1))}", border=True, help="So oft müsste die lineare Suche für alle Anfragen zusammen komplett durch die Daten laufen.")
-    behaviour.caption("Treffer liegen vorne" if workload.position == "front" else "Treffer überall verteilt")
+    features = results.features
+    for column, card in zip(st.columns(4), profile_cards(features, story)):
+        column.metric(card.label, card.value, border=True, help=card.help or None)
+        column.caption(card.verdict)
     used = "gebraucht" if results.recommendation.uses_sampled_features else "nicht gebraucht: Größe und deine Angaben reichten"
     st.caption(f"Die Stichprobe kostete {format_ns(features.analysis_time_ns)} und wurde für die Entscheidung {used}.")
 
 
 def _answer(step) -> str:
     """The answer of one decision step with the measured value, as a coloured badge."""
-    value = format_value(step.feature, step.value)
-    colour = "green" if step.answer else "gray"
-    word = "ja" if step.answer else "nein"
-    if step.feature in BOOLEAN_FEATURES:
-        return f":{colour}-badge[{word}]"
-    return f":{colour}-badge[{word}] :gray[{FEATURE_NAMES_DE.get(step.feature, step.feature)} = {value}]"
+    yes, value = answer_parts(step)
+    badge = ":green-badge[ja]" if yes else ":gray-badge[nein]"
+    return f"{badge} :gray[{value}]" if value else badge
 
 
 def _decision_chapter(results: StoryResults) -> None:
@@ -243,12 +228,7 @@ def _what_if_chapter(story: Story, results: StoryResults) -> None:
     st.altair_chart(charts.cost_curves(frame, queries), width="stretch")
     chosen = next(r for r in measured if r.strategy == recommendation.strategy)
     ratio = chosen.total_ns(queries) / fastest.total_ns(queries)
-    if fastest.strategy == recommendation.strategy:
-        agreement = "✅ Laut Messung ist das auch die schnellste Strategie."
-    elif ratio < 1.15:
-        agreement = f"Laut Messung praktisch gleichauf mit „{STRATEGIES[fastest.strategy].name_de}“ ({percent(ratio - 1, 0)} Unterschied)."
-    else:
-        agreement = f"⚠️ Laut Messung wäre „{STRATEGIES[fastest.strategy].name_de}“ {german(round(ratio, 1))}-mal so schnell."
+    agreement = agreement_text(STRATEGIES[recommendation.strategy].name_de, STRATEGIES[fastest.strategy].name_de, ratio)
     verdict, fact = st.columns([3, 2])
     with verdict.container(border=True, height="stretch"):
         st.caption(f"Empfehlung bei q = {german(queries)}")

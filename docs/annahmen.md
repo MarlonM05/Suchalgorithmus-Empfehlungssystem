@@ -485,4 +485,9 @@ die Empfehlung, zu der sie führt. Diese Behauptung wird getestet.
 - Der Suchschlüssel einer Geschichte liegt an der Position, an der das
   Zugriffsmuster seine Treffer im Mittel findet (Mitte bzw. vordere 1 %).
   So ist die gemessene Zeit der linearen Suche typisch für die Geschichte.
+- Die Webseite auf GitHub Pages (`presentation/build_site.py`) zeigt
+  dieselben Geschichten mit denselben Funktionen. Ihre Zeiten werden einmal
+  beim Erstellen auf dem Rechner gemessen, der das Skript ausführt, und im
+  Fuß jeder Seite mit Datum, CPU und Code-Stand angegeben. Gebaut wird sie auf
+  dem Messlaptop. GitHub Actions veröffentlicht sie nur und misst nicht neu.
 
