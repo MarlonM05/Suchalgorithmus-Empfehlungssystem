@@ -5,6 +5,10 @@
 # site/ is built on the measurement laptop with
 #   python presentation/build_site.py
 # so the website shows times measured there, not on a shared cloud runner.
+#
+# The four actions must be used in matching major versions: the combination
+# upload-pages-artifact@v3 + deploy-pages@v4 no longer works (the deployment
+# finds no artifact), so all of them are on their current majors.
 name: Pages
 
 on:
@@ -31,10 +35,10 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/checkout@v7
+      - uses: actions/configure-pages@v6
+      - uses: actions/upload-pages-artifact@v5
         with:
           path: site
       - id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
