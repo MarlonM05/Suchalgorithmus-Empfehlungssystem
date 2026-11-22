@@ -137,3 +137,17 @@ a.story-card .go { color: var(--blue); font-weight: 600; font-size: 0.9rem; marg
 
 footer { border-top: 1px solid var(--line); margin-top: 3rem; padding: 1.6rem 0 2.4rem; color: var(--muted); font-size: 0.88rem; }
 .next-story { display: flex; justify-content: space-between; gap: 1rem; flex-wrap: wrap; margin-top: 1.4rem; }
+
+/* Buttons, architecture page */
+.button { display: inline-block; padding: 0.55rem 1.1rem; border-radius: 8px; background: var(--blue); color: #fff; text-decoration: none; font-weight: 600; margin: 0.2rem 0.5rem 0.2rem 0; }
+.button.secondary { background: transparent; color: var(--blue); border: 1px solid var(--blue); }
+.pill.app { background: var(--blue); border-color: var(--blue); color: #fff; font-weight: 600; }
+.figure { background: #fff; padding: 0.8rem; }
+.figure img { width: 100%; height: auto; display: block; }
+table.modules { width: 100%; border-collapse: collapse; }
+table.modules th, table.modules td { text-align: left; vertical-align: top; padding: 0.7rem 0.6rem; border-bottom: 1px solid var(--line); }
+table.modules td:first-child { width: 30%; }
+table.modules code, pre code { font-size: 0.85rem; color: var(--ink-2); }
+pre { background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 0.9rem 1rem; overflow-x: auto; }
+ol.steps li { margin-bottom: 0.6rem; }
+

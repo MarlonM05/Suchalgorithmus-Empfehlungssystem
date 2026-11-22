@@ -135,3 +135,15 @@ def test_workload_random_miss_is_really_absent():
     assert not app.exception
     data = app.session_state["data"]
     assert int(app.session_state["search_key"]) not in set(data.tolist())
+
+
+def test_online_limits():
+    """The online version (Streamlit Community Cloud) offers at most 10^6 keys, the local one 10^7."""
+    import sys
+
+    sys.path.insert(0, str(APP_DIR))
+    from views import common, data_page
+
+    assert common.MAX_DATA_SIZE == (1_000_000 if common.ONLINE else 10_000_000)
+    assert max(data_page.SIZES) == common.MAX_DATA_SIZE
+    assert not common._on_streamlit_cloud()  # this test runs locally or in CI, not on Streamlit Cloud

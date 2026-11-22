@@ -15,10 +15,18 @@ Three sections:
 layout helpers are in ``app/views/common.py``.
 """
 
+import sys
+from pathlib import Path
+
 import streamlit as st
 
+try:
+    import recommender  # noqa: F401  installed by requirements.txt ("-e .")
+except ModuleNotFoundError:  # e.g. on a host that skips the editable install: use src/ directly
+    sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
 from views import analysis_page, data_page, execution_page, learning_page, recommendation_page, start_page, story_page, workload_page
-from views.common import PAGES, STEPS, init_state, sidebar_summary
+from views.common import ONLINE, PAGES, STEPS, WEBSITE_URL, init_state, sidebar_summary
 
 st.set_page_config(page_title="Suchalgorithmus-Empfehlungssystem", page_icon="🔎", layout="wide")
 init_state()
@@ -47,6 +55,13 @@ navigation = st.navigation(
 with st.sidebar:
     st.markdown("### 🔎 Suchalgorithmus-Empfehlungssystem")
     st.caption("DHBW Ravensburg · Theoretische Informatik")
+    st.caption(f"[Webseite mit den Geschichten]({WEBSITE_URL}) · [Code auf GitHub](https://github.com/MarlonM05/Suchalgorithmus-Empfehlungssystem)")
+    if ONLINE:
+        st.info(
+            "**Online-Version** auf einem geteilten Cloud-Server: Die gemessenen Zeiten weichen von den Messungen der Arbeit ab, "
+            "Datenmengen gehen bis 1 Million Werte. Lokal: `streamlit run app/streamlit_app.py`.",
+            icon=":material/cloud:",
+        )
 # The summary of the tool's current data only makes sense on the tool pages;
 # the stories have their own data and would be confused with it.
 if navigation in [PAGES[n] for n in range(1, 7)]:
